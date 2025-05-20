@@ -1,0 +1,1 @@
+from .hack_assembler import check_answer
