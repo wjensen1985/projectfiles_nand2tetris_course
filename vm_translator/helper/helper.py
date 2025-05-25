@@ -258,13 +258,50 @@ def translateVMtoASM(input, Vmlookup, label_cnt):
                 '@SP', 'M=M+1'
             ]     
         elif input[1] == 'static':
-            tmp = '// error '     
+            tmp = ['// error ' ]    
             pass
         elif input[1] == 'pointer':
-            tmp = '// error '     
-            pass
+            tmp = ['// error ' ]
+            if input[2] == '0':
+                # THIS
+                if input[0] == 'pop':
+                    tmp = [
+                        # select value at top of stack, SP--
+                        '@SP', 'M=M-1', 'A=M', 'D=M',
+                        # go to THAT, and store D there
+                        '@THIS', 'M=D'
+
+                    ]
+                if input[0] == 'push':
+                    tmp = [
+                        # grab value in THAT
+                        '@THIS', 'D=M',
+                        # push to top of stack
+                        '@SP', 'A=M', 'M=D',
+                        # SP++
+                        '@SP', 'M=M+1'
+                    ]
+            elif input[2] == '1':
+                # THAT
+                if input[0] == 'pop':
+                    tmp = [
+                        # select value at top of stack, SP--
+                        '@SP', 'M=M-1', 'A=M', 'D=M',
+                        # go to THAT, and store D there
+                        '@THAT', 'M=D'
+
+                    ]
+                if input[0] == 'push':
+                    tmp = [
+                        # grab value in THAT
+                        '@THAT', 'D=M',
+                        # push to top of stack
+                        '@SP', 'A=M', 'M=D',
+                        # SP++
+                        '@SP', 'M=M+1'
+                    ]
         else:
-            tmp = '// error '     
+            tmp = ['// error ']     
 
         ret = tmp
     else:
