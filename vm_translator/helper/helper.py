@@ -1,5 +1,3 @@
-from enum import Enum
-
 """
 purpose: read in text from file line by line -> put in array
 input: file name
@@ -76,10 +74,10 @@ class VmCmdLookup:
     def __init__(self):
         self._ASM_translation = {
             "push": [
-                # sets addr to segment base addr + segment_idx value
-                '@segment', 'D=M', '@seg_idx', 'D=D+A', '@addr', 'M=D',
-                # *addr = *SP
-                'A=M', 'D=M', '@addr', 'M=D',
+                # sets A to the segment + seg_idx address
+                '@segment', 'D=M', '@seg_idx', 'D=D+A', 'A=D',
+                # grabs value at that segment index's address, stores in D, then puts on top of stack
+                'D=M', '@SP', 'A=M', 'M=D',
                 # SP++
                 '@SP', 'M=M+1',
             ],
@@ -89,7 +87,7 @@ class VmCmdLookup:
                 # SP--
                 '@SP', 'M=M-1',
                 # *addr = *SP
-                'A=M', 'D=M', '@addr', 'M=D'
+                'A=M', 'D=M', '@addr', 'A=M', 'M=D'
             ],
             "add": [
                 # select top value in stack (store in D):
@@ -215,14 +213,14 @@ def translateVMtoASM(input, Vmlookup, label_cnt):
         # special cases are constant, static, and pointer
         segment_name_keyword = {
             'local': 'LCL',
-            'temp': 'Temp',
+            # 'temp': '5',
             'argument': 'ARG',
             'this': 'THIS',
             'that': 'THAT',
         }
 
         if input[1] in segment_name_keyword:
-            tmp = Vmlookup.lookup_vm_cmd(input[0])
+            tmp = Vmlookup.lookup_vm_cmd(input[0]).copy()
 
             # loop through returned arr, if any arr[i] in kwd_lookup, replace: arr[i] = kwd_l[arr[i]]
             for i in range(len(tmp)):
@@ -230,12 +228,31 @@ def translateVMtoASM(input, Vmlookup, label_cnt):
                     tmp[i] = '@' + segment_name_keyword[input[1]]
                 if tmp[i] == '@seg_idx':
                     tmp[i] = '@' + input[2]
+        elif input[1] == 'temp':
+            if input[0] == 'pop':
+                tmp = [
+                    # sets addr to segment base addr + segment_idx value
+                    '@5', 'D=A', f'@{input[2]}', 'D=D+A', '@addr', 'M=D',
+                    # SP--
+                    '@SP', 'M=M-1',
+                    # *addr = *SP
+                    'A=M', 'D=M', '@addr', 'A=M', 'M=D'
+                ]
+            if input[0] == 'push':
+                tmp = [
+                    # sets addr to segment base addr + segment_idx value
+                    '@5', 'D=A', f'@{input[2]}', 'D=D+A', 'A=D',
+                    # grabs value at that segment index's address, stores in D, then puts on top of stack
+                    'D=M', '@SP', 'A=M', 'M=D',
+                    # SP++
+                    '@SP', 'M=M+1',
+                ]
         elif input[1] == 'constant':
             # is special push
             tmp = [
                 # sets D to const value
                 f'@{input[2]}', 'D=A',
-                # pushes D value to stakc
+                # pushes D value to stack
                 '@SP', 'A=M', 'M=D',
                 # SP++
                 '@SP', 'M=M+1'

@@ -40,8 +40,8 @@ def main(file):
     # print(flattened_asm)
     
     # write array to file line by line
-    # outputFileName = str(file.split('.')[0]) + '.' + 'asm'
-    outputFileName = "test.asm"
+    outputFileName = str(file.split('.')[0]) + '.' + 'asm'
+    # outputFileName = "test.asm"
     writeListToFile(flattened_asm, outputFileName)
 
     return outputFileName
