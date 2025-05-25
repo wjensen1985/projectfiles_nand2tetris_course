@@ -259,7 +259,24 @@ def translateVMtoASM(input, Vmlookup, label_cnt):
             ]     
         elif input[1] == 'static':
             tmp = ['// error ' ]    
-            pass
+            if input[0] == 'pop':
+                tmp = [
+                    # sets addr to segment base addr + segment_idx value
+                    '@16', 'D=A', f'@{input[2]}', 'D=D+A', '@addr', 'M=D',
+                    # SP--
+                    '@SP', 'M=M-1',
+                    # *addr = *SP
+                    'A=M', 'D=M', '@addr', 'A=M', 'M=D'
+                ]
+            if input[0] == 'push':
+                tmp = [
+                    # sets addr to segment base addr + segment_idx value
+                    '@16', 'D=A', f'@{input[2]}', 'D=D+A', 'A=D',
+                    # grabs value at that segment index's address, stores in D, then puts on top of stack
+                    'D=M', '@SP', 'A=M', 'M=D',
+                    # SP++
+                    '@SP', 'M=M+1',
+                ]
         elif input[1] == 'pointer':
             tmp = ['// error ' ]
             if input[2] == '0':
