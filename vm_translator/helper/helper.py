@@ -93,19 +93,18 @@ class VmCmdLookup:
             ],
             "add": [
                 # select top value in stack (store in D):
-                '@SP', 'A=M', 'A=A-1', 'D=M',
+                '@SP', 'M=M-1', 'A=M',
                 # Move down one more stack posn, add prev to current and replace
-                'A=A-1', 'D=D+M', 'M=D', 
-                # reset stack pointer to first open
-                'D=A+1', '@SP', 'M=D'
+                'D=M', 'A=A-1', 'D=D+M', 'M=D'
                 ],
             "sub": [
-                # select top value in stack (store in D):
-                '@SP', 'A=M', 'A=A-1', 'D=M',
-                # Move down one more stack posn, subtract prev to current and replace
-                'A=A-1', 'D=D-M', 'M=D', 
-                # reset stack pointer to first open
-                'D=A+1', '@SP', 'M=D'
+                # STACK = [x, y, __], where SP points to __  where sub is x - y
+                # select top value in stack (store in D), D = y
+                '@SP', 'M=M-1', 'A=M', 'D=M',
+                # Move down one more stack posn
+                'A=A-1', 
+                # here M = x, so M-D == x-y, result is put in to M
+                'M=M-D',
                 ],
             "neg": [
                 # select top value in stack
@@ -114,12 +113,12 @@ class VmCmdLookup:
                 'M=-M'
             ],
             "eq": [
-                # STACK = [y, x, __] where SP points to __
-                # D = x, SP--
+                # STACK = [x, y, __], where SP points to __  where eq is x == y
+                # D = y, SP--
                 '@SP', 'M=M-1', 'A=M', 'D=M',
-                # Set D = x - y
+                # Set D = y - x
                 'A=A-1', 'D=D-M',
-                # jump to is True part of code if x - y > 0
+                # jump to is True part of code if y - x == 0
                 '@T_N', 'D;JEQ',
                 # if False (x-y <= 0), set D to false, jump to end
                 'D=0', '@END_N', '0;JMP',
@@ -129,11 +128,11 @@ class VmCmdLookup:
                 '(END_N)', '@END_N', '@SP', 'A=M', 'A=A-1', 'M=D'
             ],
             "gt": [
-                # STACK = [y, x, __] where SP points to __
-                # D = x, SP--
+                # STACK = [x, y, __], where SP points to __  where eq is x > y 
+                # D = y, SP--
                 '@SP', 'M=M-1', 'A=M', 'D=M',
                 # Set D = x - y
-                'A=A-1', 'D=D-M',
+                'A=A-1', 'D=M-D',
                 # jump to is True part of code if x - y > 0
                 '@T_N', 'D;JGT',
                 # if False (x-y <= 0), set D to false, jump to end
@@ -144,13 +143,13 @@ class VmCmdLookup:
                 '(END_N)', '@END_N', '@SP', 'A=M', 'A=A-1', 'M=D'
             ],
             "lt": [
-                # STACK = [y, x, __] where SP points to __
-                # D = x, SP--
+                # STACK = [x, y, __], where SP points to __  where eq is x < y
+                # D = y, SP--
                 '@SP', 'M=M-1', 'A=M', 'D=M',
-                # Set D = x - y
+                # Set D = y - x
                 'A=A-1', 'D=D-M',
-                # jump to is True part of code if x - y > 0
-                '@T_N', 'D;JLT',
+                # jump to is True part of code if y - x > 0
+                '@T_N', 'D;JGT',
                 # if False (x-y <= 0), set D to false, jump to end
                 'D=0', '@END_N', '0;JMP',
                 # If True, set D = -1, then jump to end
@@ -159,16 +158,16 @@ class VmCmdLookup:
                 '(END_N)', '@END_N', '@SP', 'A=M', 'A=A-1', 'M=D'
             ],
             "and": [
-                # select top value in stack
-                '@SP', 'A=M', 'A=A-1',
+                # select top value in stack (move SP down 1 in advance)
+                '@SP', 'M=M-1', 'A=M',
                 # store top val in D, move down one more
                 'D=M', 'A=A-1',
                 # boolean AND
                 'M=D&M'
             ],
             "or": [
-                # select top value in stack
-                '@SP', 'A=M', 'A=A-1',
+                # select top value in stack (move SP down 1 in advance)
+                '@SP', 'M=M-1', 'A=M',
                 # store top val in D, move down one more
                 'D=M', 'A=A-1',
                 # boolean OR
@@ -198,7 +197,7 @@ def translateVMtoASM(input, Vmlookup, label_cnt):
     ret = ["// something went wrong - default"]
     if len(input) == 1:
         # arithmetic/boolean stack operation
-        ret = Vmlookup.lookup_vm_cmd(input[0])
+        ret = Vmlookup.lookup_vm_cmd(input[0]).copy()
         for i in range(len(ret)):
             if ret[i] == '@T_N':
                 ret[i] = str(f'@T_{label_cnt}')
