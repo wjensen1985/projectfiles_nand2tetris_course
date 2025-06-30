@@ -8,18 +8,16 @@ Optional argument is test file to compare asm result file
 import sys
 from helper import *
 
-def main(file):
+def main(filePath):
     # read in raw line by line input
-    raw_input = readRawInputFile(file)
+    raw_input = readRawInputFile(filePath)
     # print(raw_input)
 
-    # clean raw input to remove comments and empty lines
+    # clean raw input to remove empty lines & comments
     cleaned_input = cleanRawInput(raw_input)
-    # print(cleaned_input)    
+    print(cleaned_input)    
 
-    # go through cleaned input
-    # if comment line -> skip
-    # if command line -> translare to asm
+    # go through cleaned input and translare to asm
     translated_asm = []
     VmLookupObj = VmCmdLookup()
     for i, line in enumerate(cleaned_input):
@@ -40,8 +38,11 @@ def main(file):
     # print(flattened_asm)
     
     # write array to file line by line
-    outputFileName = str(file.split('.')[0]) + '.' + 'asm'
+    ogFileName = filePath.split('/')[-1]
+    # print(ogFileName)
+    outputFileName = str(ogFileName.split('.')[0])+ '.' + 'asm'
     # outputFileName = "test.asm"
+    # print(outputFileName)
     writeListToFile(flattened_asm, outputFileName)
 
     return outputFileName

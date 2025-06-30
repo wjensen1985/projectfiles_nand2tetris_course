@@ -21,8 +21,16 @@ def cleanRawInput(raw_input_arr):
     cleaned_input = []
     for line in raw_input_arr:        
         line = line.strip()
-        if not line:
+        if not line or isComment(line):
             continue
+        # check for inline comments and remove
+        # remove tabs
+        line = line.replace('\t', '')
+        # remove anything after comment symbol
+        line = line.split('/')[0]
+        # remove trailing spaces
+        line = line.rstrip()
+        # append cleaned line
         cleaned_input.append(line)
 
     return cleaned_input
@@ -177,9 +185,15 @@ class VmCmdLookup:
                 # boolean NOT
                 'M=!M'
             ],
-            "label": [],
-            "goto": [],
-            "ifgoto": [],
+            "label": [
+
+            ],
+            "goto": [
+                '@_NAME'
+            ],
+            "if-goto": [
+
+            ],
         }
     
     def lookup_vm_cmd(self, command):
@@ -208,6 +222,11 @@ def translateVMtoASM(input, Vmlookup, label_cnt):
 
     elif len(input) == 2:
         # skip for now, label/func
+        ret = Vmlookup.lookup_vm_cmd(input[0]).copy()
+        for i in range(len(ret)):
+            if ret[i] == '@_NAME':
+                ret[i] = f'@{input[1]}'
+
         pass
     elif len(input) == 3:
         # special cases are constant, static, and pointer
@@ -322,7 +341,7 @@ def translateVMtoASM(input, Vmlookup, label_cnt):
 
         ret = tmp
     else:
-        ret = ["// command to long"]
+        ret = ["// command too long"]
     return ret
 
 # flattens list (depth 1level), ex: 
