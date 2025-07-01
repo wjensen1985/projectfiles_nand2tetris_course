@@ -186,18 +186,17 @@ class VmCmdLookup:
                 'M=!M'
             ],
             "label": [
-                '(NAME)'
+                '(LABEL)'
             ],
             "goto": [
-                '(NAME)'
+                # jump to LABEL
+                '@_NAME', '0;JMP'
             ],
             "if-goto": [
-                # set D=0
-                '@0', 'D=A',
-                # check if D - Top_Val_in_Stack == 0;  checks if top stack is False
-                '@SP', 'M=M-1', 'A=M', 'D=D-M',
-                # if stack is false, continue, else jump to LABEL; aka is D != 0 jump
-                '@_LABEL', 'D;JGT', '@_LABEL', 'D;JLT'
+                # Pop value from stack into D
+                '@SP', 'M=M-1', 'A=M', 'D=M',
+                # if D != 0, jump
+                '@_LABEL', 'D;JNE'
             ],
         }
     
@@ -229,9 +228,11 @@ def translateVMtoASM(input, Vmlookup, label_cnt):
         # skip for now, label/func
         ret = Vmlookup.lookup_vm_cmd(input[0]).copy()
         for i in range(len(ret)):
-            if ret[i] == '(NAME)':
+            if ret[i] == '(LABEL)':
                 ret[i] = f'({input[1]})'
             elif ret[i] == '@_LABEL':
+                ret[i] = f'@{input[1]}'
+            elif ret[i] == '@_NAME':
                 ret[i] = f'@{input[1]}'
 
         pass
