@@ -15,7 +15,7 @@ def readRawInputFile(input_file):
 """
 purpose: remove empty lines
 input: array of raw line by line text from file
-output: array without empty lines 
+output: array without empty lines and with comments/whitespace removed
 """
 def cleanRawInput(raw_input_arr):
     cleaned_input = []
@@ -186,13 +186,18 @@ class VmCmdLookup:
                 'M=!M'
             ],
             "label": [
-
+                '(NAME)'
             ],
             "goto": [
-                '@_NAME'
+                '(NAME)'
             ],
             "if-goto": [
-
+                # set D=0
+                '@0', 'D=A',
+                # check if D - Top_Val_in_Stack == 0;  checks if top stack is False
+                '@SP', 'M=M-1', 'A=M', 'D=D-M',
+                # if stack is false, continue, else jump to LABEL; aka is D != 0 jump
+                '@_LABEL', 'D;JGT', '@_LABEL', 'D;JLT'
             ],
         }
     
@@ -224,7 +229,9 @@ def translateVMtoASM(input, Vmlookup, label_cnt):
         # skip for now, label/func
         ret = Vmlookup.lookup_vm_cmd(input[0]).copy()
         for i in range(len(ret)):
-            if ret[i] == '@_NAME':
+            if ret[i] == '(NAME)':
+                ret[i] = f'({input[1]})'
+            elif ret[i] == '@_LABEL':
                 ret[i] = f'@{input[1]}'
 
         pass
