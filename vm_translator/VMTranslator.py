@@ -20,6 +20,7 @@ def main(filePath):
     # go through cleaned input and translare to asm
     translated_asm = []
     VmLookupObj = VmCmdLookup()
+    funcLabel = None
     for i, line in enumerate(cleaned_input):
         if isComment(line):
             continue
@@ -29,7 +30,12 @@ def main(filePath):
             asm_eqv.append(command)
 
             split_cmd = line.split(' ')
-            tmp = translateVMtoASM(split_cmd, VmLookupObj, i)
+
+            # save/create function label here? and pass to obj?
+            if split_cmd[0] == 'function':
+                funcLabel = f'{split_cmd[1]}$ret{i}'
+                print(funcLabel)
+            tmp = translateVMtoASM(split_cmd, VmLookupObj, i, funcLabel)
             asm_eqv.extend(tmp)
             translated_asm.append(asm_eqv)
 

@@ -91,11 +91,11 @@ class VmCmdLookup:
             ],
             "pop": [
                 # sets addr to segment base addr + segment_idx value
-                '@segment', 'D=M', '@seg_idx', 'D=D+A', '@addr', 'M=D',
+                '@segment', 'D=M', '@seg_idx', 'D=D+A', '@R15', 'M=D',
                 # SP--
                 '@SP', 'M=M-1',
                 # *addr = *SP
-                'A=M', 'D=M', '@addr', 'A=M', 'M=D'
+                'A=M', 'D=M', '@R15', 'A=M', 'M=D'
             ],
             "add": [
                 # select top value in stack (store in D):
@@ -201,9 +201,10 @@ class VmCmdLookup:
             "return": [
                 # get return value and return to caller at expected address
                 # 'endFrame = LCL'
-                '@LCL', 'D=M', '@endFrame', 'M=D',
+                # R13 = endFrame, R14 = returnAddr
+                '@LCL', 'D=M', '@R13', 'M=D',
                 # returnAddr = *(endFrame - 5)
-                '@5', 'D=A', '@endFrame', 'D=M-D', 'A=D', 'D=M', '@returnAddr', 'M=D',
+                '@5', 'D=A', '@R13', 'D=M-D', 'A=D', 'D=M', '@R14', 'M=D',
                 # *ARG = pop()
                 '@SP', 'A=M', 'A=A-1', 'D=M',
                 '@ARG', 'A=M', 'M=D',
@@ -214,17 +215,17 @@ class VmCmdLookup:
 
                 # restore segment pointers
                 # THAT = *(endFrame - 1)
-                '@1', 'D=A', '@endFrame', 'D=M-D', 'A=D', 'D=M', '@THAT', 'M=D',
+                '@1', 'D=A', '@R13', 'D=M-D', 'A=D', 'D=M', '@THAT', 'M=D',
                 # THIS = *(endFrame - 2)
-                '@2', 'D=A', '@endFrame', 'D=M-D', 'A=D', 'D=M', '@THIS', 'M=D',
+                '@2', 'D=A', '@R13', 'D=M-D', 'A=D', 'D=M', '@THIS', 'M=D',
                 # ARG = *(endFrame - 3)
-                '@3', 'D=A', '@endFrame', 'D=M-D', 'A=D', 'D=M', '@ARG', 'M=D',
+                '@3', 'D=A', '@R13', 'D=M-D', 'A=D', 'D=M', '@ARG', 'M=D',
                 # LCL = *(endFrame - 4)
-                '@4', 'D=A', '@endFrame', 'D=M-D', 'A=D', 'D=M', '@LCL', 'M=D',
+                '@4', 'D=A', '@R13', 'D=M-D', 'A=D', 'D=M', '@LCL', 'M=D',
                 
                 # go to return address
                 # goto retAddr
-                '@returnAddr', 'A=M', '0;JMP',
+                '@R14', 'A=M', '0;JMP',
             ],
         }
     
@@ -237,7 +238,7 @@ purpose: translare vm input (line by line) to hack asm output
 input: input array
 output
 """
-def translateVMtoASM(input, Vmlookup, label_cnt):
+def translateVMtoASM(input, Vmlookup, label_cnt, lastFuncLabel):
     ret = ["// something went wrong - default"]
     if len(input) == 1:
         # arithmetic/boolean stack operation & return
@@ -251,7 +252,10 @@ def translateVMtoASM(input, Vmlookup, label_cnt):
                 ret[i] = str(f'(T_{label_cnt})')
             if ret[i] == '(END_N)':
                 ret[i] = str(f'(END_{label_cnt})')
-
+            # if ret[i] == '@returnAddr':
+            #     ret[i] = str(f'@returnAddr_{lastFuncLabel}')
+            # if ret[i] == '@endFrame':
+            #     ret[i] = str(f'@endFrame_{lastFuncLabel}')
     elif len(input) == 2:
         ret = Vmlookup.lookup_vm_cmd(input[0]).copy()
         for i in range(len(ret)):
@@ -288,11 +292,11 @@ def translateVMtoASM(input, Vmlookup, label_cnt):
                 if input[0] == 'pop':
                     tmp = [
                         # sets addr to segment base addr + segment_idx value
-                        '@5', 'D=A', f'@{input[2]}', 'D=D+A', '@addr', 'M=D',
+                        '@5', 'D=A', f'@{input[2]}', 'D=D+A', '@R15', 'M=D',
                         # SP--
                         '@SP', 'M=M-1',
                         # *addr = *SP
-                        'A=M', 'D=M', '@addr', 'A=M', 'M=D'
+                        'A=M', 'D=M', '@R15', 'A=M', 'M=D'
                     ]
                 if input[0] == 'push':
                     tmp = [
@@ -318,11 +322,11 @@ def translateVMtoASM(input, Vmlookup, label_cnt):
                 if input[0] == 'pop':
                     tmp = [
                         # sets addr to segment base addr + segment_idx value
-                        '@16', 'D=A', f'@{input[2]}', 'D=D+A', '@addr', 'M=D',
+                        '@16', 'D=A', f'@{input[2]}', 'D=D+A', '@R15', 'M=D',
                         # SP--
                         '@SP', 'M=M-1',
                         # *addr = *SP
-                        'A=M', 'D=M', '@addr', 'A=M', 'M=D'
+                        'A=M', 'D=M', '@R15', 'A=M', 'M=D'
                     ]
                 if input[0] == 'push':
                     tmp = [
@@ -375,30 +379,7 @@ def translateVMtoASM(input, Vmlookup, label_cnt):
                         ]
         elif input[0] == 'function':
             """
-                function call template:
-                input[1] = funcName, input[2] = nArgs
-                0. take funcName and generate label
-                1. push stack frame:
-                    push (in order): returnAddress, LCL, ARG, THIS, THAT
-                    --> take this VM and run through already built out push function
-                    '@LCL', 'D=A',
-                        '@SP', 'A=M', 'M=D',
-                    # SP++
-                        '@SP', 'M=M+1'
-                2. reposition ARG for called function:
-                    ARG = SP - 5 - nArgs
-                    f'A={nArgs}', 'D=A', '@5', 'D=D+A', '@SP', 'D=M-D', '@ARG', 'M=D'
-                    LCL = SP
-                    '@SP', 'D=M', '@LCL', 'M=D',
-                3. jump to function:
-                    goto funcName
-                    f'goto {funcName}'
-                4. declare return address label:
-                    '(returnAddr)'
-            """
-
-            """
-                fucntion funcName, nVars
+                function funcName, nVars
                 1. injectt entry point label
                 2. initialize local segment of the callee
             """
@@ -407,7 +388,9 @@ def translateVMtoASM(input, Vmlookup, label_cnt):
             funcName, nVars = input[1:3]
 
             # 1. inject entry point label
-            tmp = [f'({funcName})']
+            tmp = [
+                f'({funcName})'
+            ]
 
             # 2. intialize local segment of callee (push 0 nVars number of times)
             for _ in range(int(nVars)):
@@ -419,72 +402,57 @@ def translateVMtoASM(input, Vmlookup, label_cnt):
                         '@SP', 'M=M+1'
                     ])
             
-            # print(f'call asm: {tmp}')
 
-            # part 1: push stack frame
-            # stackFrameElements = ['returnAddr', 'LCL', 'ARG', 'THIS', 'THAT']
-            # for x in stackFrameElements:
-            #     asm_code = [
-            #             # get caller address for stack frame element (memory segment base addr)
-            #             f'@{x}', 'D=A',
-            #             # go to top of stack and push D
-            #             '@SP', 'A=M', 'M=D',
-            #             # SP++
-            #             '@SP', 'M=M+1'
-            #         ]
-            #     tmp.extend(asm_code.copy())
-            
-            # part 2: reposition ARG for called function
-            # tmp.extend([
-            #         # ARG = SP - 5 - nArgs
-            #         f'@{nArgs}', 'D=A', '@5', 'D=D+A', 
-            #         '@SP', 'D=M-D', '@ARG', 'M=D',
-            #         # LCL = SP
-            #         '@SP', 'D=M', '@LCL', 'M=D',
-            #     ])
-            
-            # # part 3: jump to function
-            # tmp.extend([
-            #             f'@{funcName}', '0;JMP'
-            #         ])
-
-            # part 4: declare return address label
-            # tmp.extend([
-            #     '(returnAddr)'
-            # ])
-            # print(tmp)
         elif input[0] == 'call':
             """
-                1. label for function entry
-                2. push 0 nVars times
-                3.
-                    a. move return value to caller
-                    b. reinstate caller's state
-                    c. goto Foo$ret.1 -> foo's return address
+                call funcName nArgs
+                function call template:
+                1. push retAddrLabel
+                2. push LCL, ARG, THIS, THAT
+                3. reposition ARG & LCL
+                4. transfer control to callee
+                5. injects retAddrLabel
             """
-            funcName, nVars = input[1:3]
             tmp = ['// error: call asm']
+            funcName, nArgs = input[1:3]
 
-            # part 1: label for function entry
-            tmp = [f'({funcName})']
-
-            # part 2: push 0 nVars times
-            for _ in range(nVars):
-                tmp.extend([
-                        '@0', 'D=A',
+            # 1. push retAddrLabel
+            tmp = [
+                f'@retAddr_{lastFuncLabel}',
+                'D=A', '@SP', 'A=M', 'M=D', '@SP', 'M=M+1',
+            ]
+            
+            # 2. push LCL, ARG, THIS, THAT -> save stack Frame
+            stackFrameElements = ['LCL', 'ARG', 'THIS', 'THAT']
+            for segName in stackFrameElements:
+                asm_code = [
+                        # get caller address for stack frame element (memory segment base addr)
+                        f'@{segName}', 'D=M',
                         # go to top of stack and push D
                         '@SP', 'A=M', 'M=D',
                         # SP++
                         '@SP', 'M=M+1'
+                    ]
+                tmp.extend(asm_code.copy())
+            
+            # 3. reposition ARG & LCL
+            tmp.extend([
+                    # ARG = SP - 5 - nArgs
+                    f'@{nArgs}', 'D=A', '@5', 'D=D+A', 
+                    '@SP', 'D=M-D', '@ARG', 'M=D',
+                    # LCL = SP
+                    '@SP', 'D=M', '@LCL', 'M=D',
+                ])
+
+            # 4. transfer control to callee
+            tmp.extend([
+                        f'@{funcName}', '0;JMP'
                     ])
             
-            # part 3:
-            #   3a: move return value to caller
-
-            #   3b: reinstate caller's state
-            
-            #   3c: goto Foo$ret.1 -> foo's return address
-
+            # 5. injects retAddrLabel
+            tmp.extend([
+                f'(retAddr_{lastFuncLabel})'
+            ])
 
             print(tmp)
         else:
