@@ -15,7 +15,7 @@ def main(filePath):
 
     # clean raw input to remove empty lines & comments
     cleaned_input = cleanRawInput(raw_input)
-    print(cleaned_input)    
+    # print(cleaned_input)    
 
     # go through cleaned input and translare to asm
     translated_asm = []

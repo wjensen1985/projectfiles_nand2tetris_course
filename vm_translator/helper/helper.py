@@ -198,6 +198,34 @@ class VmCmdLookup:
                 # if D != 0, jump
                 '@_LABEL', 'D;JNE'
             ],
+            "return": [
+                # get return value and return to caller at expected address
+                # 'endFrame = LCL'
+                '@LCL', 'D=M', '@endFrame', 'M=D',
+                # returnAddr = *(endFrame - 5)
+                '@5', 'D=A', '@endFrame', 'D=M-D', 'A=D', 'D=M', '@returnAddr', 'M=D',
+                # *ARG = pop()
+                '@SP', 'A=M', 'A=A-1', 'D=M',
+                '@ARG', 'A=M', 'M=D',
+
+                # Reposition Stack pointer
+                # SP = ARG + 1
+                '@ARG', 'D=M+1', '@SP', 'M=D',
+
+                # restore segment pointers
+                # THAT = *(endFrame - 1)
+                '@1', 'D=A', '@endFrame', 'D=M-D', 'A=D', 'D=M', '@THAT', 'M=D',
+                # THIS = *(endFrame - 2)
+                '@2', 'D=A', '@endFrame', 'D=M-D', 'A=D', 'D=M', '@THIS', 'M=D',
+                # ARG = *(endFrame - 3)
+                '@3', 'D=A', '@endFrame', 'D=M-D', 'A=D', 'D=M', '@ARG', 'M=D',
+                # LCL = *(endFrame - 4)
+                '@4', 'D=A', '@endFrame', 'D=M-D', 'A=D', 'D=M', '@LCL', 'M=D',
+                
+                # go to return address
+                # goto retAddr
+                '@returnAddr', 'A=M', '0;JMP',
+            ],
         }
     
     def lookup_vm_cmd(self, command):
@@ -212,7 +240,7 @@ output
 def translateVMtoASM(input, Vmlookup, label_cnt):
     ret = ["// something went wrong - default"]
     if len(input) == 1:
-        # arithmetic/boolean stack operation
+        # arithmetic/boolean stack operation & return
         ret = Vmlookup.lookup_vm_cmd(input[0]).copy()
         for i in range(len(ret)):
             if ret[i] == '@T_N':
@@ -225,7 +253,6 @@ def translateVMtoASM(input, Vmlookup, label_cnt):
                 ret[i] = str(f'(END_{label_cnt})')
 
     elif len(input) == 2:
-        # skip for now, label/func
         ret = Vmlookup.lookup_vm_cmd(input[0]).copy()
         for i in range(len(ret)):
             if ret[i] == '(LABEL)':
@@ -237,113 +264,229 @@ def translateVMtoASM(input, Vmlookup, label_cnt):
 
         pass
     elif len(input) == 3:
+        # push segment i, pop segment i, function funcName nVars, call funcName nArgs
         # special cases are constant, static, and pointer
-        segment_name_keyword = {
-            'local': 'LCL',
-            # 'temp': '5',
-            'argument': 'ARG',
-            'this': 'THIS',
-            'that': 'THAT',
-        }
+        if input[0] == 'pop' or input[0] == 'push':
+            segment_name_keyword = {
+                'local': 'LCL',
+                # 'temp': '5',
+                'argument': 'ARG',
+                'this': 'THIS',
+                'that': 'THAT',
+            }
 
-        if input[1] in segment_name_keyword:
-            tmp = Vmlookup.lookup_vm_cmd(input[0]).copy()
+            if input[1] in segment_name_keyword:
+                tmp = Vmlookup.lookup_vm_cmd(input[0]).copy()
 
-            # loop through returned arr, if any arr[i] in kwd_lookup, replace: arr[i] = kwd_l[arr[i]]
-            for i in range(len(tmp)):
-                if tmp[i] == '@segment':
-                    tmp[i] = '@' + segment_name_keyword[input[1]]
-                if tmp[i] == '@seg_idx':
-                    tmp[i] = '@' + input[2]
-        elif input[1] == 'temp':
-            if input[0] == 'pop':
-                tmp = [
-                    # sets addr to segment base addr + segment_idx value
-                    '@5', 'D=A', f'@{input[2]}', 'D=D+A', '@addr', 'M=D',
-                    # SP--
-                    '@SP', 'M=M-1',
-                    # *addr = *SP
-                    'A=M', 'D=M', '@addr', 'A=M', 'M=D'
-                ]
-            if input[0] == 'push':
-                tmp = [
-                    # sets addr to segment base addr + segment_idx value
-                    '@5', 'D=A', f'@{input[2]}', 'D=D+A', 'A=D',
-                    # grabs value at that segment index's address, stores in D, then puts on top of stack
-                    'D=M', '@SP', 'A=M', 'M=D',
-                    # SP++
-                    '@SP', 'M=M+1',
-                ]
-        elif input[1] == 'constant':
-            # is special push
-            tmp = [
-                # sets D to const value
-                f'@{input[2]}', 'D=A',
-                # pushes D value to stack
-                '@SP', 'A=M', 'M=D',
-                # SP++
-                '@SP', 'M=M+1'
-            ]     
-        elif input[1] == 'static':
-            tmp = ['// error ' ]    
-            if input[0] == 'pop':
-                tmp = [
-                    # sets addr to segment base addr + segment_idx value
-                    '@16', 'D=A', f'@{input[2]}', 'D=D+A', '@addr', 'M=D',
-                    # SP--
-                    '@SP', 'M=M-1',
-                    # *addr = *SP
-                    'A=M', 'D=M', '@addr', 'A=M', 'M=D'
-                ]
-            if input[0] == 'push':
-                tmp = [
-                    # sets addr to segment base addr + segment_idx value
-                    '@16', 'D=A', f'@{input[2]}', 'D=D+A', 'A=D',
-                    # grabs value at that segment index's address, stores in D, then puts on top of stack
-                    'D=M', '@SP', 'A=M', 'M=D',
-                    # SP++
-                    '@SP', 'M=M+1',
-                ]
-        elif input[1] == 'pointer':
-            tmp = ['// error ' ]
-            if input[2] == '0':
-                # THIS
+                # loop through returned arr, if any arr[i] in kwd_lookup, replace: arr[i] = kwd_l[arr[i]]
+                for i in range(len(tmp)):
+                    if tmp[i] == '@segment':
+                        tmp[i] = '@' + segment_name_keyword[input[1]]
+                    if tmp[i] == '@seg_idx':
+                        tmp[i] = '@' + input[2]
+            elif input[1] == 'temp':
                 if input[0] == 'pop':
                     tmp = [
-                        # select value at top of stack, SP--
-                        '@SP', 'M=M-1', 'A=M', 'D=M',
-                        # go to THAT, and store D there
-                        '@THIS', 'M=D'
-
+                        # sets addr to segment base addr + segment_idx value
+                        '@5', 'D=A', f'@{input[2]}', 'D=D+A', '@addr', 'M=D',
+                        # SP--
+                        '@SP', 'M=M-1',
+                        # *addr = *SP
+                        'A=M', 'D=M', '@addr', 'A=M', 'M=D'
                     ]
                 if input[0] == 'push':
                     tmp = [
-                        # grab value in THAT
-                        '@THIS', 'D=M',
-                        # push to top of stack
-                        '@SP', 'A=M', 'M=D',
+                        # sets addr to segment base addr + segment_idx value
+                        '@5', 'D=A', f'@{input[2]}', 'D=D+A', 'A=D',
+                        # grabs value at that segment index's address, stores in D, then puts on top of stack
+                        'D=M', '@SP', 'A=M', 'M=D',
                         # SP++
-                        '@SP', 'M=M+1'
+                        '@SP', 'M=M+1',
                     ]
-            elif input[2] == '1':
-                # THAT
+            elif input[1] == 'constant':
+                # is special push
+                tmp = [
+                    # sets D to const value
+                    f'@{input[2]}', 'D=A',
+                    # pushes D value to stack
+                    '@SP', 'A=M', 'M=D',
+                    # SP++
+                    '@SP', 'M=M+1'
+                ]     
+            elif input[1] == 'static':
+                tmp = ['// error ' ]    
                 if input[0] == 'pop':
                     tmp = [
-                        # select value at top of stack, SP--
-                        '@SP', 'M=M-1', 'A=M', 'D=M',
-                        # go to THAT, and store D there
-                        '@THAT', 'M=D'
-
+                        # sets addr to segment base addr + segment_idx value
+                        '@16', 'D=A', f'@{input[2]}', 'D=D+A', '@addr', 'M=D',
+                        # SP--
+                        '@SP', 'M=M-1',
+                        # *addr = *SP
+                        'A=M', 'D=M', '@addr', 'A=M', 'M=D'
                     ]
                 if input[0] == 'push':
                     tmp = [
-                        # grab value in THAT
-                        '@THAT', 'D=M',
-                        # push to top of stack
+                        # sets addr to segment base addr + segment_idx value
+                        '@16', 'D=A', f'@{input[2]}', 'D=D+A', 'A=D',
+                        # grabs value at that segment index's address, stores in D, then puts on top of stack
+                        'D=M', '@SP', 'A=M', 'M=D',
+                        # SP++
+                        '@SP', 'M=M+1',
+                    ]
+            elif input[1] == 'pointer':
+                tmp = ['// error ' ]
+                if input[2] == '0':
+                    # THIS
+                    if input[0] == 'pop':
+                        tmp = [
+                            # select value at top of stack, SP--
+                            '@SP', 'M=M-1', 'A=M', 'D=M',
+                            # go to THAT, and store D there
+                            '@THIS', 'M=D'
+
+                        ]
+                    if input[0] == 'push':
+                        tmp = [
+                            # grab value in THAT
+                            '@THIS', 'D=M',
+                            # push to top of stack
+                            '@SP', 'A=M', 'M=D',
+                            # SP++
+                            '@SP', 'M=M+1'
+                        ]
+                elif input[2] == '1':
+                    # THAT
+                    if input[0] == 'pop':
+                        tmp = [
+                            # select value at top of stack, SP--
+                            '@SP', 'M=M-1', 'A=M', 'D=M',
+                            # go to THAT, and store D there
+                            '@THAT', 'M=D'
+
+                        ]
+                    if input[0] == 'push':
+                        tmp = [
+                            # grab value in THAT
+                            '@THAT', 'D=M',
+                            # push to top of stack
+                            '@SP', 'A=M', 'M=D',
+                            # SP++
+                            '@SP', 'M=M+1'
+                        ]
+        elif input[0] == 'function':
+            """
+                function call template:
+                input[1] = funcName, input[2] = nArgs
+                0. take funcName and generate label
+                1. push stack frame:
+                    push (in order): returnAddress, LCL, ARG, THIS, THAT
+                    --> take this VM and run through already built out push function
+                    '@LCL', 'D=A',
+                        '@SP', 'A=M', 'M=D',
+                    # SP++
+                        '@SP', 'M=M+1'
+                2. reposition ARG for called function:
+                    ARG = SP - 5 - nArgs
+                    f'A={nArgs}', 'D=A', '@5', 'D=D+A', '@SP', 'D=M-D', '@ARG', 'M=D'
+                    LCL = SP
+                    '@SP', 'D=M', '@LCL', 'M=D',
+                3. jump to function:
+                    goto funcName
+                    f'goto {funcName}'
+                4. declare return address label:
+                    '(returnAddr)'
+            """
+
+            """
+                fucntion funcName, nVars
+                1. injectt entry point label
+                2. initialize local segment of the callee
+            """
+
+            tmp = ['// error: function asm']
+            funcName, nVars = input[1:3]
+
+            # 1. inject entry point label
+            tmp = [f'({funcName})']
+
+            # 2. intialize local segment of callee (push 0 nVars number of times)
+            for _ in range(int(nVars)):
+                tmp.extend([
+                        '@0', 'D=A',
+                        # go to top of stack and push D
                         '@SP', 'A=M', 'M=D',
                         # SP++
                         '@SP', 'M=M+1'
-                    ]
+                    ])
+            
+            # print(f'call asm: {tmp}')
+
+            # part 1: push stack frame
+            # stackFrameElements = ['returnAddr', 'LCL', 'ARG', 'THIS', 'THAT']
+            # for x in stackFrameElements:
+            #     asm_code = [
+            #             # get caller address for stack frame element (memory segment base addr)
+            #             f'@{x}', 'D=A',
+            #             # go to top of stack and push D
+            #             '@SP', 'A=M', 'M=D',
+            #             # SP++
+            #             '@SP', 'M=M+1'
+            #         ]
+            #     tmp.extend(asm_code.copy())
+            
+            # part 2: reposition ARG for called function
+            # tmp.extend([
+            #         # ARG = SP - 5 - nArgs
+            #         f'@{nArgs}', 'D=A', '@5', 'D=D+A', 
+            #         '@SP', 'D=M-D', '@ARG', 'M=D',
+            #         # LCL = SP
+            #         '@SP', 'D=M', '@LCL', 'M=D',
+            #     ])
+            
+            # # part 3: jump to function
+            # tmp.extend([
+            #             f'@{funcName}', '0;JMP'
+            #         ])
+
+            # part 4: declare return address label
+            # tmp.extend([
+            #     '(returnAddr)'
+            # ])
+            # print(tmp)
+        elif input[0] == 'call':
+            """
+                1. label for function entry
+                2. push 0 nVars times
+                3.
+                    a. move return value to caller
+                    b. reinstate caller's state
+                    c. goto Foo$ret.1 -> foo's return address
+            """
+            funcName, nVars = input[1:3]
+            tmp = ['// error: call asm']
+
+            # part 1: label for function entry
+            tmp = [f'({funcName})']
+
+            # part 2: push 0 nVars times
+            for _ in range(nVars):
+                tmp.extend([
+                        '@0', 'D=A',
+                        # go to top of stack and push D
+                        '@SP', 'A=M', 'M=D',
+                        # SP++
+                        '@SP', 'M=M+1'
+                    ])
+            
+            # part 3:
+            #   3a: move return value to caller
+
+            #   3b: reinstate caller's state
+            
+            #   3c: goto Foo$ret.1 -> foo's return address
+
+
+            print(tmp)
         else:
             tmp = ['// error ']     
 
