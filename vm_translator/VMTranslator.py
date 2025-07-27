@@ -81,13 +81,18 @@ if __name__ == "__main__":
                 asm_arrs.append(translateFile(filePath))
                 print(f'Done Translating file at: {filePath}')
         
-        dirNameStr = os.path.basename(os.path.dirname(inputPath))
-        combinedOutputFileName = f'{dirNameStr}.asm'
-        print(f'Writing results to file: {combinedOutputFileName}')
+        dirNameStr = os.path.basename(os.path.normpath(inputPath))
+        # print(dirNameStr)
+        # print(inputPath)
+        outputFileName = f'{dirNameStr}.asm'
+        # fullOutputPath = f'{inputPath}{outputFileName}'
+        fullOutputPath = os.path.join(inputPath, outputFileName)
+        print(f'Writing results to file: {fullOutputPath}')
+        
         # write bootstrap to file:
-        writeListToFile(bootstrap_arr, combinedOutputFileName, 0)
+        writeListToFile(bootstrap_arr, fullOutputPath, 0)
         for idx, arr in enumerate(asm_arrs):
-            writeListToFile(arr, combinedOutputFileName, idx+1)
-        print(f'Done writing results to file: {combinedOutputFileName}')
+            writeListToFile(arr, fullOutputPath, idx+1)
+        print(f'Done writing results to file: {fullOutputPath}')
     else:
         print("input args error")
