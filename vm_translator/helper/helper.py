@@ -78,6 +78,7 @@ def isComment(line):
     else:
         return False
 
+# object that holds looks up a vm vommand and returns the asm code
 class VmCmdLookup:
     def __init__(self):
         self._ASM_translation = {
@@ -238,7 +239,7 @@ purpose: translare vm input (line by line) to hack asm output
 input: input array
 output
 """
-def translateVMtoASM(input, Vmlookup, label_cnt, lastFuncLabel):
+def translateVMtoASM(input, Vmlookup, label_cnt, lastFuncLabel, callCounter, fileName):
     ret = ["// something went wrong - default"]
     if len(input) == 1:
         # arithmetic/boolean stack operation & return
@@ -318,24 +319,16 @@ def translateVMtoASM(input, Vmlookup, label_cnt, lastFuncLabel):
                     '@SP', 'M=M+1'
                 ]     
             elif input[1] == 'static':
-                tmp = ['// error ' ]    
                 if input[0] == 'pop':
                     tmp = [
-                        # sets addr to segment base addr + segment_idx value
-                        '@16', 'D=A', f'@{input[2]}', 'D=D+A', '@R15', 'M=D',
-                        # SP--
-                        '@SP', 'M=M-1',
-                        # *addr = *SP
-                        'A=M', 'D=M', '@R15', 'A=M', 'M=D'
+                        '@SP', 'M=M-1', 'A=M', 'D=M',
+                        f'@{fileName}.{input[2]}', 'M=D'
                     ]
                 if input[0] == 'push':
                     tmp = [
-                        # sets addr to segment base addr + segment_idx value
-                        '@16', 'D=A', f'@{input[2]}', 'D=D+A', 'A=D',
-                        # grabs value at that segment index's address, stores in D, then puts on top of stack
-                        'D=M', '@SP', 'A=M', 'M=D',
-                        # SP++
-                        '@SP', 'M=M+1',
+                        f'@{fileName}.{input[2]}', 'D=M',
+                        '@SP', 'A=M', 'M=D',
+                        '@SP', 'M=M+1'
                     ]
             elif input[1] == 'pointer':
                 tmp = ['// error ' ]
@@ -418,7 +411,7 @@ def translateVMtoASM(input, Vmlookup, label_cnt, lastFuncLabel):
 
             # 1. push retAddrLabel
             tmp = [
-                f'@retAddr_{lastFuncLabel}',
+                f'@retAddr_{fileName}_{callCounter}',
                 'D=A', '@SP', 'A=M', 'M=D', '@SP', 'M=M+1',
             ]
             
@@ -451,10 +444,10 @@ def translateVMtoASM(input, Vmlookup, label_cnt, lastFuncLabel):
             
             # 5. injects retAddrLabel
             tmp.extend([
-                f'(retAddr_{lastFuncLabel})'
+                f'(retAddr_{fileName}_{callCounter})'
             ])
 
-            print(tmp)
+            # print(tmp)
         else:
             tmp = ['// error ']     
 
@@ -473,10 +466,63 @@ def flattenArr(arr):
     return ret
 
 # writes 1D list to file line by line
-def writeListToFile(data, fileName):
-    with open(fileName, 'w') as f:
+# inputNumber is the count of arrays already written to the file
+# this is used to tell this to add a new line before the data or not
+# anything >=1 will add '\n' at the beginning
+def writeListToFile(data, fileName, inputNumber):
+    with open(fileName, 'a+') as f:
+        if inputNumber > 0:
+            f.write('\n')
         for i in range(len(data)):
             if i < len(data)-1:
                 f.write(data[i] + '\n')
             else:
                 f.write(data[i])
+
+def writeBoostrapASM():
+    tmp = [
+        # SP = 256; setting stack pointer
+        '// Boostrap: set SP to 256', '@256', 'D=A', '@SP', 'M=D',
+    ]
+
+    # call sys init:
+    # 1. push retAddrLabel
+    tmp.extend([
+        f'@retAddr_bootstrap_sys_init',
+        'D=A', '@SP', 'A=M', 'M=D', '@SP', 'M=M+1',
+    ])
+    
+    # 2. push LCL, ARG, THIS, THAT -> save stack Frame
+    stackFrameElements = ['LCL', 'ARG', 'THIS', 'THAT']
+    for segName in stackFrameElements:
+        asm_code = [
+                # get caller address for stack frame element (memory segment base addr)
+                f'@{segName}', 'D=M',
+                # go to top of stack and push D
+                '@SP', 'A=M', 'M=D',
+                # SP++
+                '@SP', 'M=M+1'
+            ]
+        tmp.extend(asm_code.copy())
+    
+    # 3. reposition ARG & LCL
+    tmp.extend([
+            # ARG = SP - 5 - nArgs
+            f'@0', 'D=A', '@5', 'D=D+A', 
+            '@SP', 'D=M-D', '@ARG', 'M=D',
+            # LCL = SP
+            '@SP', 'D=M', '@LCL', 'M=D',
+        ])
+
+    # 4. transfer control to callee
+    tmp.extend([
+                f'@Sys.init', '0;JMP'
+            ])
+    
+    # 5. injects retAddrLabel
+    tmp.extend([
+        f'(retAddr_bootstrap_sys_init)'
+    ])
+    
+    return tmp
+
