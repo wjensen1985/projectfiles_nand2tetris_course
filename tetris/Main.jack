@@ -1,0 +1,28 @@
+/** Main class of tetris game. */
+class Main {
+
+    function void main() {
+        var TetrisGame game;
+        var boolean game_state;
+
+        let game_state = true;
+        let game = TetrisGame.new(0,0);
+
+
+        while(game_state){
+            // play the game
+            do Screen.setColor(true);
+            do Output.printInt(game.get_score());
+            do Screen.drawRectangle(50,50,100,100);
+            
+            do Sys.wait(1000);
+
+            do Screen.setColor(false);
+            do Screen.drawRectangle(50,50,100,100);
+            let game_state = false;
+        }
+
+        do game.dispose();
+        return;
+    }
+}

@@ -1,0 +1,20 @@
+/** Tetris Game class */
+class TetrisGame { 
+    field int score;
+    field int level;
+
+    constructor TetrisGame new(int initScore, int initLevel){
+        let score = initScore;
+        let level = initLevel;
+        return this;
+    }
+
+    method int get_score(){
+        return score;
+    }
+
+    method void dispose(){
+        do Memory.deAlloc(this);
+        return;
+    }
+}
