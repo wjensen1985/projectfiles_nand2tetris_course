@@ -1,0 +1,50 @@
+/** Tetris Piece class */
+class Piece {
+    field char type;
+    field int xPos;
+    field int yPos;
+    // need positions/points field to represent in grid space
+    // pivot point?
+
+    constructor Piece new(char initType, int x, int y){
+        let type = initType;
+        let xPos = x;
+        let yPos = y;
+    }
+
+    method void placeInGrid(){
+
+        return;
+    }
+
+    method boolean canRotate(){
+
+        return;
+    }
+
+    method void rotate(){
+
+        return;
+    }
+
+    method boolean isLocked(){
+
+        return;
+    }
+
+    method void move(){
+
+        return;
+    }
+
+    method void drop(){
+
+        return;
+    }
+
+    method void dispose(){
+        do Memory.deAlloc(this);
+        return;
+    }
+
+}

@@ -1,0 +1,49 @@
+/** Grid class for grid of Game tiles. */
+class Grid {
+    field int rows;
+    field int cols;
+    field int hiddenRows; // how many of the rows (top down) are hidden
+    /* 
+    other fields:
+     - list of tiles cols x (rows + hiddenRows)
+     -- need method/function to help draw these tiles/board to screen
+     - isOverflow?  tells whether grid is overflowing?
+
+    methods:
+     - draw
+     - canClearRow
+     -- check what row(s) can be cleared
+     - clearRow
+     -- clears a given row
+    */
+
+    // draws current grid state on to the screen
+    method void draw(){
+
+        return;
+    }
+
+    // checks what row(s) in the grid can be cleared
+    method int canClearRows(){
+
+        return;
+    }
+
+    // clears a given row
+    method void clearRow(){
+
+        return;
+    }
+
+    constructor Grid new(int initRows, int initCols){
+        let rows = initRows;
+        let cols = initCols;
+        let hiddenRows = 2;
+    }
+
+    method void dispose(){
+        do Memory.deAlloc(this);
+        return;
+    }
+
+}
