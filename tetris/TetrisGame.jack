@@ -2,6 +2,7 @@
 class TetrisGame { 
     field int score;
     field int level;
+    field Grid grid;
 
     /* 
     other fields:
@@ -12,6 +13,8 @@ class TetrisGame {
     constructor TetrisGame new(int initScore, int initLevel){
         let score = initScore;
         let level = initLevel;
+        let grid = Grid.new(20, 10);
+
         return this;
     }
 
@@ -21,6 +24,14 @@ class TetrisGame {
 
     method int get_level(){
         return level;
+    }
+
+    method void draw(){
+        do grid.draw(true);
+        do Sys.wait(1000);
+        do grid.draw(false);
+
+        return;
     }
 
     method void dispose(){

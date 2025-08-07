@@ -10,6 +10,8 @@ class Piece {
         let type = initType;
         let xPos = x;
         let yPos = y;
+
+        return this;
     }
 
     method void placeInGrid(){
@@ -17,6 +19,7 @@ class Piece {
         return;
     }
 
+/*
     method boolean canRotate(){
 
         return;
@@ -41,6 +44,7 @@ class Piece {
 
         return;
     }
+*/
 
     method void dispose(){
         do Memory.deAlloc(this);

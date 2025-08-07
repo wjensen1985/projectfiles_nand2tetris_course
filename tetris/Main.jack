@@ -11,15 +11,8 @@ class Main {
 
         while(game_state){
             // play the game
-            do Screen.setColor(true);
-            do Output.printInt(game.get_score());
-            do Screen.drawRectangle(50,50,100,100);
+            do game.draw();            
             
-            do Sys.wait(1000);
-
-            do Screen.setColor(false);
-            do Screen.drawRectangle(50,50,100,100);
-            let game_state = false;
         }
 
         do game.dispose();
