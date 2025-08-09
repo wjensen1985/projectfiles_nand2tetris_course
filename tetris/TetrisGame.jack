@@ -30,15 +30,13 @@ class TetrisGame {
         var int grid_start_px;
 
         // draw
-        let grid_start_px = grid.draw(true);
-        do Sys.wait(1000);
+        let grid_start_px = grid.draw();
         do draw_statics(true, grid_start_px);
         do Sys.wait(1000);
 
-        // erase
-        do grid.draw(false);
-        do Sys.wait(1000);
-        do draw_statics(false, grid_start_px);
+        // set all grids to 1 (init value is 0 or empty)
+        do grid.clearRow(10);
+        do grid.draw();
         do Sys.wait(1000);
 
         return;

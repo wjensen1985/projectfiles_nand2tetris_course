@@ -1,0 +1,97 @@
+
+/** Matrix class for 2d array of integer points */
+class Matrix{
+    field Array a;
+    field int rows;
+    field int cols;
+
+    method void set(int r, int c, int value){
+        var Array tmp;
+
+        // check in bounds
+        if (r < rows & c < cols){
+            let tmp = a[r];
+            let tmp[c] = value;
+        }else{
+            // do nothing
+        }
+
+        return;
+    }
+
+    method int get(int r, int c){
+        var int ret;
+        var Array tmp;
+
+        if (r < rows) {
+            let tmp = a[r];
+            let ret = tmp[c];
+        }else {
+            // do nothing
+            let ret = -1;
+        }
+
+        return ret;
+    }
+
+    method void set_row(int r, int value){
+        var Array tmp;
+        var int i;
+        // check in bounds
+        if (r < rows){
+            let i = 0;
+            let tmp = a[r];
+
+            while (i < cols) {
+                let tmp[i] = value;
+                let i = i + 1;
+            }
+
+        }else{
+            // do nothing
+        }
+
+        return;
+    }
+
+    method void set_all(int value){
+        var int i;
+
+        let i = 0;
+        while (i < rows) {
+            do set_row(i, value);
+            let i = i + 1;
+        }
+
+        return;
+    }
+
+    constructor Matrix new(int init_rows, int columns, int init_val){
+        var int r, c;
+        var Array tmp;
+
+        let rows = init_rows;
+        let cols = columns;
+
+        let a = Array.new(rows);
+        let r = 0;
+        
+        while (r < rows){
+            let a[r] = Array.new(cols);
+            let tmp = a[r];
+            let c = 0;
+            while (c < cols){
+                let tmp[c] = init_val;
+                let c = c + 1;
+            }
+            let r = r + 1;
+        }
+
+        return this;
+    }
+
+    method void dispose(){
+        do Memory.deAlloc(this);
+        return;
+    }
+}
