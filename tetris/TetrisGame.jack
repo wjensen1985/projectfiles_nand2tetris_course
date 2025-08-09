@@ -27,9 +27,73 @@ class TetrisGame {
     }
 
     method void draw(){
-        do grid.draw(true);
+        var int grid_start_px;
+
+        // draw
+        let grid_start_px = grid.draw(true);
         do Sys.wait(1000);
+        do draw_statics(true, grid_start_px);
+        do Sys.wait(1000);
+
+        // erase
         do grid.draw(false);
+        do Sys.wait(1000);
+        do draw_statics(false, grid_start_px);
+        do Sys.wait(1000);
+
+        return;
+    }
+
+    method void draw_statics(boolean color, int ref_px){
+        var int grid_start_px;
+        var int grid_size_px; // includes extra 2px for rightmost border
+        var int box_size, space_size;
+        var int columns;
+        var int rows;
+        var int i, x1, x2, y1, y2;
+
+        let box_size = 10;
+        let space_size = 2;
+
+        let rows = 21;
+        let columns = 12;
+
+        let grid_start_px = ref_px;
+        let grid_size_px = 12 * 10;
+
+        do Screen.setColor(color);
+        // draw border columns on left and right of grid
+        let i = 0;
+        while (i < rows){
+            // draw left border column:
+            let x1 = ref_px - (box_size + space_size);
+            let y1 = i * (box_size + space_size);
+            let x2 = x1 + (box_size);
+            let y2 = y1 + (box_size);
+
+            do Screen.drawRectangle(x1, y1, x2, y2);
+
+            // draw right border column:
+            let x1 = ref_px + grid_size_px;
+            let x2 = x1 + (box_size);
+
+            do Screen.drawRectangle(x1, y1, x2, y2);
+
+            let i = i + 1;
+        }
+
+        // draw border row on bottom of grid
+        let i = 0;
+        // y's are already set to correct row height/offset
+        while (i < 10){
+            let x1 = ref_px + ( i * (box_size + space_size));
+            let x2 = x1 + (box_size);
+
+            do Screen.drawRectangle(x1, y1, x2, y2);
+
+            let i = i + 1;
+        }
+
 
         return;
     }
