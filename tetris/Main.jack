@@ -8,10 +8,11 @@ class Main {
         let game_state = true;
         let game = TetrisGame.new(0,0);
 
+        do game.setup();
 
         while(game_state){
             // play the game
-            do game.draw();            
+            let game_state = game.play();            
             
         }
 

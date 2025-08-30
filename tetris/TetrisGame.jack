@@ -3,10 +3,20 @@ class TetrisGame {
     field int score;
     field int level;
     field Grid grid;
+    field Piece currentPiece;
+    field int grid_start_px;
+    field int prevFrameTime;
+    field int time;
+    field int frameRate;
+
 
     /* 
     other fields:
      - current piece
+     - next piece
+     - last piece (can't have)
+     - piece bag
+     - array of pieces -> pop as use?
      - grid
     */
 
@@ -14,8 +24,23 @@ class TetrisGame {
         let score = initScore;
         let level = initLevel;
         let grid = Grid.new(20, 10);
+        let currentPiece = Piece.new(1, 4, 4);
+        let time = 0;
+        let prevFrameTime = 0;
+        let frameRate = 30;
 
         return this;
+    }
+
+    method void setup(){
+        var int ref_px;
+
+        let ref_px = grid.getHorizontalOffset();
+
+        do grid.draw();
+        do draw_statics(true, ref_px);
+
+        return;
     }
 
     method int get_score(){
@@ -26,20 +51,63 @@ class TetrisGame {
         return level;
     }
 
-    method void draw(){
-        var int grid_start_px;
+    method void draw(int time){
+        var Array pieceGridPts;
+        var int i, lenPts, timeDiff;
 
-        // draw
-        let grid_start_px = grid.draw();
-        do draw_statics(true, grid_start_px);
-        do Sys.wait(1000);
+        // draw 'locked' points if Frame is > frameRate past prevFrame
+        let timeDiff = time - prevFrameTime;
+        if (timeDiff > frameRate){
+            do grid.draw();
+            let prevFrameTime = time;
+        }
 
-        // set all grids to 1 (init value is 0 or empty)
-        do grid.clearRow(10);
-        do grid.draw();
-        do Sys.wait(1000);
+        // draw in the current Pieces 'active' points
+        let pieceGridPts = currentPiece.calcGridCoords();
+        let lenPts = currentPiece.get_bb_size();
+        // (r, c, val)
+        let lenPts = (lenPts * 3);
 
+        let i = 0;
+        while (i < lenPts){
+            if (pieceGridPts[i+2] = 1){
+                // draw point in grid
+                do grid.drawOverPoint(pieceGridPts[i], pieceGridPts[i+1], true);
+
+            }
+
+            let i = i + 3;
+        } 
+        
+        do pieceGridPts.dispose();
         return;
+    }
+
+    method boolean play(){
+        var Array piece_grid_coords;
+        var int curKey;
+
+        while(time < 1000) {
+            
+            // check current piece can be locked/is in_bounds:
+
+            // update screen/draw current game state:
+            do draw(prevFrameTime);
+
+
+            // Get User input:
+            // detect key press
+            let curKey = Keyboard.keyPressed();
+            // do Output.printChar(curKey);
+            if ((curKey = 65) | (curKey = 97)){
+                do Output.printChar(curKey);
+            }
+
+            let time = time + 1;
+        }
+
+
+        return false;
     }
 
     method void draw_statics(boolean color, int ref_px){

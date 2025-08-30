@@ -1,0 +1,19 @@
+/** utility functions */
+class Utils {
+
+    method int Mod(int x, int y){
+        var int remainder;
+
+        if (x = 0){
+            return 0;
+        }
+
+        let remainder = x;
+        while (~(remainder < y)){
+            let remainder = remainder - y;
+        }
+
+        return remainder;
+    }
+
+}

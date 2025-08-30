@@ -1,20 +1,154 @@
 /** Tetris Piece class */
 class Piece {
-    field char type;
-    field int xPos;
-    field int yPos;
+    field int type;
+    field int rowPos;
+    field int colPos;
+    field int rotationIndex;
+    field Matrix boundingBox;
+    field int boundingBoxSize;
     // need positions/points field to represent in grid space
     // pivot point?
+    // types are I, O, T, S, Z, J, L -> map to ints?
 
-    constructor Piece new(char initType, int x, int y){
+    constructor Piece new(int initType, int x, int y){
         let type = initType;
-        let xPos = x;
-        let yPos = y;
+        let rowPos = x;
+        let colPos = y;
+        let rotationIndex = 0;
+
+        let boundingBox = Matrix.new(4, 4, 0);
+        let boundingBoxSize = 4;
+        // do boundingBox.set_point(1,2,1);
+        // do boundingBox.set_point(2,2,1);
+        // do boundingBox.set_point(3,2,1);
+        // do boundingBox.set_point(4,2,1);
+        // do boundingBox.set_all(1);
+
+        // Types: 0: "I", 1: "O", 2: "Z", 3: "S", 4: "T", 5: "J", 6: "L"
+
+        if ((initType = 0) | (initType = 1)){
+            let boundingBox = Matrix.new(4, 4, 0);
+            let boundingBoxSize = 4;
+            do boundingBox.set_point(1,2,1);
+            do boundingBox.set_point(2,2,1);
+            do boundingBox.set_point(3,2,1);
+            do boundingBox.set_point(4,2,1);
+        }else{
+            let boundingBox = Matrix.new(3, 3, 0);
+            let boundingBoxSize = 3;
+            do boundingBox.set_point(1,2,1);
+            do boundingBox.set_point(2,2,1);
+            do boundingBox.set_point(3,2,1);
+        }
 
         return this;
     }
 
-    method void placeInGrid(){
+    method int get_bb_size(){
+        return boundingBoxSize;
+    }
+
+    // method void placeInGrid(Grid grid){
+    //     var Array piecePoints;
+    //     // piece points from rotation point
+    //     // --> array of points for piece
+    //     // do Output.printChar(type);
+
+    //     let piecePoints = calcGridCoords(rowPos, colPos, type);
+        
+    //     // for point in point list, set point in grid
+    //     // list of poitns [r1, c1, value, r2, c2...], #points, value
+    //     do grid.placePointsList(piecePoints, 4);
+
+    //     return;
+    // }
+
+    method Array calcGridCoords(){
+        var Array ret;
+        var int i, bbRow, bbCol, tmp, retSize;
+        let i = 0;
+        let retSize = (boundingBoxSize * boundingBoxSize * 3);
+        let ret = Array.new(retSize);
+        // let ret = Array.new((4*3));
+
+
+        let bbRow = 1;
+        // do Output.printInt(bbRow);
+        // do Output.printInt(boundingBoxSize);
+        while (bbRow < (boundingBoxSize+1)) {
+            let bbCol = 1;
+            while (bbCol < (boundingBoxSize+1)){
+                let tmp = boundingBox.get(bbRow, bbCol);
+                // do Output.printInt(tmp);
+                if (tmp = 1){
+                    let ret[i] = rowPos + bbRow - 1 + 2;
+                    let ret[i+1] = colPos + bbCol - 1;
+                    let ret[i+2] = tmp;
+                    let i = i + 3;
+                }
+
+                let bbCol = bbCol + 1;
+            }
+            let bbRow = bbRow + 1;
+        }
+
+        return ret;
+    }
+
+    method int getRow(){
+        return rowPos;
+    }
+
+    method int getCol(){
+        return colPos;
+    }
+
+    method void setRow(int newRowPos){
+        let rowPos = newRowPos;
+        return;
+    }   
+
+    method void setCol(int newColPos){
+        let colPos = newColPos;
+        return;
+    }   
+
+    method void move(int dc, int dr){
+        // dc is change to column position (left/right)
+        // dr is change to row position (up/down)
+        var int newRow, newCol;
+        let newRow = rowPos + dr;
+        let newCol = colPos + dc;
+
+        do setRow(newRow);
+        do setCol(newCol);
+
+        return;
+    }
+
+    method boolean canMove(){
+
+
+        return true;
+    }
+
+    method boolean canRotate(){
+
+
+        return true;
+    }
+
+    method void drawPieceInGrid(int horizontal_offset, int box_size, int space_size){
+        var int x1, x2, y1, y2, c, r;
+        let c = 1;
+        let r = 1;
+        
+        let x1 = horizontal_offset + ((c-1) * (box_size + space_size));
+        let y1 = (r-1) * (box_size + space_size);
+        let x2 = x1 + (box_size);
+        let y2 = y1 + (box_size);
+
+        do Screen.drawRectangle(x1, y1, x2, y2);
 
         return;
     }
@@ -36,6 +170,11 @@ class Piece {
     }
 
     method void move(){
+
+        return;
+    }
+
+    method void canMove(){
 
         return;
     }
