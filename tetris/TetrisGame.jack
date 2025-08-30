@@ -7,7 +7,11 @@ class TetrisGame {
     field int grid_start_px;
     field int prevFrameTime;
     field int time;
-    field int frameRate;
+    field int updateTicks;
+    field int curKey;
+    field int prevKey;
+    field int prevKeyTime;
+    field int kbdTicks;
 
 
     /* 
@@ -27,7 +31,11 @@ class TetrisGame {
         let currentPiece = Piece.new(1, 4, 4);
         let time = 0;
         let prevFrameTime = 0;
-        let frameRate = 30;
+        let updateTicks = 200;
+        let curKey = 0;
+        let prevKey = 0;
+        let prevKeyTime = 0;
+        let kbdTicks = 500;
 
         return this;
     }
@@ -51,33 +59,41 @@ class TetrisGame {
         return level;
     }
 
-    method void draw(int time){
+    method void draw(int timeDiff){
         var Array pieceGridPts;
-        var int i, lenPts, timeDiff;
+        var int i, lenPts;
 
-        // draw 'locked' points if Frame is > frameRate past prevFrame
-        let timeDiff = time - prevFrameTime;
-        if (timeDiff > frameRate){
-            do grid.draw();
-            let prevFrameTime = time;
+        // draw 'locked' points if Frame is > updateTicks past prevFrame
+        // let timeDiff = time - prevFrameTime;
+        // if (timeDiff > (updateTicks-2)){
+        //     do grid.draw();
+        // }
+
+        if (timeDiff = 0){
+            do grid.draw();        
+            // draw in the current Pieces 'active' points
+            let pieceGridPts = currentPiece.calcGridCoords();
+            let lenPts = currentPiece.get_bb_size();
+            // (r, c, val)
+            let lenPts = (lenPts * 3);
+
+            let i = 0;
+            while (i < lenPts){
+                if (pieceGridPts[i+2] = 1){
+                    // draw point in grid
+                    do grid.drawOverPoint(pieceGridPts[i], pieceGridPts[i+1], true);
+                } 
+                // else {
+                //     if( (grid.getPoint(pieceGridPts[i], pieceGridPts[i+1])) = 1){
+                //         do grid.drawOverPoint(pieceGridPts[i], pieceGridPts[i+1], true);
+                //     }
+                // }
+
+                let i = i + 3;
+            } 
         }
 
-        // draw in the current Pieces 'active' points
-        let pieceGridPts = currentPiece.calcGridCoords();
-        let lenPts = currentPiece.get_bb_size();
-        // (r, c, val)
-        let lenPts = (lenPts * 3);
 
-        let i = 0;
-        while (i < lenPts){
-            if (pieceGridPts[i+2] = 1){
-                // draw point in grid
-                do grid.drawOverPoint(pieceGridPts[i], pieceGridPts[i+1], true);
-
-            }
-
-            let i = i + 3;
-        } 
         
         do pieceGridPts.dispose();
         return;
@@ -85,29 +101,73 @@ class TetrisGame {
 
     method boolean play(){
         var Array piece_grid_coords;
-        var int curKey;
+        var int timeDiff;
 
-        while(time < 1000) {
+        let time = 0;
+        let prevFrameTime = 0;
+        let prevKeyTime = 0;
+        let timeDiff = 0;
+
+        // time < 20000
+        while(true) {
+            
+            // update time step:
+            if (timeDiff > updateTicks){
+                let prevFrameTime = time;
+            }
+            let timeDiff = time - prevFrameTime;
             
             // check current piece can be locked/is in_bounds:
 
+
             // update screen/draw current game state:
-            do draw(prevFrameTime);
+            do draw(timeDiff);
 
 
             // Get User input:
-            // detect key press
             let curKey = Keyboard.keyPressed();
-            // do Output.printChar(curKey);
-            if ((curKey = 65) | (curKey = 97)){
-                do Output.printChar(curKey);
+
+            if (~(curKey = 0) ) {
+                if ( ~(curKey = prevKey) ) { 
+                    // is new key pressed -> handle and save time/key value
+                    
+                    // handle key press functionality
+                    do handleKeyPress(curKey);
+                    do Output.printChar(curKey);
+                    
+                    // update state:
+                    let prevKeyTime = time;
+                    let prevKey = curKey;
+                } else{
+                    // is previously pressed key
+                    if ((time - prevKeyTime) > kbdTicks) {
+                        // re-handle key press
+                        do handleKeyPress(curKey);
+                        do Output.printChar(curKey);
+
+                        // update state:
+                        let prevKeyTime = time;
+                        let prevKey = curKey;
+                    }
+                }
             }
 
             let time = time + 1;
         }
 
-
+        do piece_grid_coords.dispose();
         return false;
+    }
+
+    method void handleKeyPress(int curKey){
+        if (curKey = 97){
+            do currentPiece.move(1,0);
+        }
+        if (curKey = 100){
+            do currentPiece.move(0, 1);
+        }
+
+        return;
     }
 
     method void draw_statics(boolean color, int ref_px){
