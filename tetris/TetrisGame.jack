@@ -8,10 +8,24 @@ class TetrisGame {
     field int prevFrameTime;
     field int time;
     field int updateTicks;
-    field int curKey;
     field int prevKey;
     field int prevKeyTime;
     field int kbdTicks;
+
+    field Array prevPieceCells; // len 12  (r, c, val) * 4
+    field boolean firstFrame;
+    field int gravityFrames;
+    field int gravityCounter;
+
+    field int dasFrames;
+    field int arrFrames;
+    field int lrHold;
+    field int dasCounter;
+    field int arrCounter;
+
+    field int lockDelayFrames;
+    field int lockCounter;
+    field boolean onGround;
 
     constructor TetrisGame new(int initScore, int initLevel){
         let score = initScore;
@@ -21,10 +35,26 @@ class TetrisGame {
         let time = 0;
         let prevFrameTime = 0;
         let updateTicks = 200;
-        let curKey = 0;
         let prevKey = 0;
         let prevKeyTime = 0;
         let kbdTicks = 500;
+
+
+        let gravityFrames = 30;
+        let gravityCounter = 0;
+        let firstFrame = true;
+
+        let dasFrames = 10;
+        let arrFrames = 2;
+        let lrHold = 0;
+        let dasCounter = 0;
+        let arrCounter = 0;
+
+        let lockDelayFrames = 30;
+        let lockCounter = 0;
+        let onGround = false;
+
+        let prevPieceCells = Array.new(12);
 
         return this;
     }
@@ -89,99 +119,314 @@ class TetrisGame {
 
     method boolean play(){
         var Array piece_grid_coords;
-        var int timeDiff;
+        var int timeDiff, i, j, found;
+        var boolean canMoveFlag2, arrFlag;
 
-        let time = 0;
-        let prevFrameTime = 0;
-        let prevKeyTime = 0;
-        let timeDiff = 0;
+        while (true){
+            // read & handle input
+            do handleKeyPress();
 
-        // time < 20000
-        while(true) {
-            
-            // update time step:
-            if (timeDiff > updateTicks){
-                let prevFrameTime = time;
+            // apply gravity
+            let gravityCounter = gravityCounter + 1;
+            if (gravityCounter > (gravityFrames-1)){
+                let canMoveFlag2 = currentPiece.canMove(grid, 0, 1);
+                if (canMoveFlag2){
+                    do currentPiece.tryMove(grid, 0, 1);
+                    let onGround = false;
+                    let lockCounter = 0;
+                } else {
+                    let onGround = true;
+                }
+                let gravityCounter = 0;
             }
-            let timeDiff = time - prevFrameTime;
-            
-            // check current piece can be locked/is in_bounds:
 
+            // locking
+            let piece_grid_coords = currentPiece.calcGridCoords();
+            if (onGround){
+                let lockCounter = lockCounter + 1;
+                if (lockCounter > (lockDelayFrames-1)){
+                    // need to add locking piece and clear and new piece spawn
+                    let lockCounter = 0;
+                    let onGround = false;
+                    // let piece_grid_coords = currentPiece.calcGridCoords();
+                    do seedPrevPieceCells(piece_grid_coords);
+                }
+            } else {
+                let lockCounter = 0;
+            }
 
-            // update screen/draw current game state:
-            do draw(timeDiff);
+            // render active piece (only changes vs. previous frame)
+            if (firstFrame){
+                do grid.draw();
+                let i = 0;
+                while (i < 12){
+                    if (piece_grid_coords[i+2] = 1){
+                        do drawCell(piece_grid_coords[i], piece_grid_coords[i+1]);
+                    }
+                    let i = i + 3;
+                }
 
+                do seedPrevPieceCells(piece_grid_coords);
+                let firstFrame = false;
+            }
 
-            // Get User input:
-            let curKey = Keyboard.keyPressed();
+            // erase old loop
+            let i = 0;
+            while (i < 12){
+                if (prevPieceCells[i+2] = 1){
+                    let found = 0;
+                    let j = 0;
+                    while (j < 12){
+                        if ( (piece_grid_coords[j+2] = 1) & (sameCell(prevPieceCells[i], prevPieceCells[i+1], piece_grid_coords[j], piece_grid_coords[j+1]) ) ){
+                            let found = 1;
+                            let j = 12;
+                        } else {
+                            let j = j + 3;
+                        }
+                    }
 
-            if (~(curKey = 0) ) {
-                if ( ~(curKey = prevKey) ) { 
-                    // is new key pressed -> handle and save time/key value
-                    
-                    // handle key press functionality
-                    do handleKeyPress(curKey);
-                    // do Output.printChar(curKey);
-                    
-                    // update state:
-                    let prevKeyTime = time;
-                    let prevKey = curKey;
+                    if (found = 0){
+                        do eraseCell(prevPieceCells[i], prevPieceCells[i+1]);
+                    }
+
+                }
+                let i = i + 3;
+            }
+
+            // draw new loop
+            let i = 0;
+            while (i < 12){
+                if (piece_grid_coords[i+2] = 1){
+                    let found = 0;
+                    let j = 0;
+                    while (j < 12){
+                        if ( (piece_grid_coords[j+2] = 1) & (sameCell(prevPieceCells[j], prevPieceCells[j+1], piece_grid_coords[i], piece_grid_coords[i+1]) ) ){
+                            let found = 1;
+                            let j = 12;
+                        } else {
+                            let j = j + 3;
+                        }
+                    }
+
+                    if (found = 0){
+                        do drawCell(piece_grid_coords[i], piece_grid_coords[i+1]);
+                    }
+
+                }
+                let i = i + 3;
+            }
+            // update prevPieceCells = pieces_grid_coords (curent)
+            let i = 0;
+            while (i < 12){
+                let prevPieceCells[i] = piece_grid_coords[i];
+                let i = i + 1;
+            }
+            do piece_grid_coords.dispose();
+
+            // update timers/counters - gravity, lock, input repeat, etc.
+            if (lrHold = 0){
+                let dasCounter = 0;
+                let arrCounter = 0;
+            } else {
+                if (dasCounter < dasFrames){
+                    let dasCounter = dasCounter + 1;
                 } else{
-                    // is previously pressed key
-                    if ((time - prevKeyTime) > kbdTicks) {
-                        // re-handle key press
-                        do handleKeyPress(curKey);
-                        // do Output.printChar(curKey);
+                    let arrCounter = arrCounter + 1;
+                    if (arrCounter > (arrFrames - 1)){
+                        // repeat move right
+                        if (lrHold = 1){
+                            // do canMove = flag
+                            let arrFlag = currentPiece.canMove(grid, 1, 0);
+                            if (arrFlag){
+                                do currentPiece.tryMove(grid, 1, 0);
+                                let onGround = false;
+                                let lockCounter = 0;
+                            }
+                        }
 
-                        // update state:
-                        let prevKeyTime = time;
-                        let prevKey = curKey;
+                        // repeat move left
+                        if (lrHold = -1){
+                            let arrFlag = currentPiece.canMove(grid, -1, 0);
+                            if (arrFlag){
+                                do currentPiece.tryMove(grid, -1, 0);
+                                let onGround = false;
+                                let lockCounter = 0;
+                            }
+                        }
+
+                        // restart ARR window
+                        let arrCounter = 0;
                     }
                 }
             }
 
-            let time = time + 1;
+            if (~(onGround)){
+                let lockCounter = 0;
+            }
+
+            if (gravityCounter < 0){
+                let gravityCounter = 0;
+            }
+            if (gravityCounter > gravityFrames){
+                let gravityCounter = 0;
+            }
+
+            if (dasCounter < 0){
+                let dasCounter = 0;
+            }
+            if (arrCounter < 0){
+                let arrCounter = 0;
+            }
+
         }
 
-        do piece_grid_coords.dispose();
+
+
+        // let time = 0;
+        // let prevFrameTime = 0;
+        // let prevKeyTime = 0;
+        // let timeDiff = 0;
+
+        // // time < 20000
+        // while(true) {
+            
+        //     // update time step:
+        //     if (timeDiff > updateTicks){
+        //         let prevFrameTime = time;
+        //     }
+        //     let timeDiff = time - prevFrameTime;
+            
+        //     // check current piece can be locked/is in_bounds:
+
+
+        //     // update screen/draw current game state:
+        //     do draw(timeDiff);
+
+
+        //     // Get User input:
+        //     let curKey = Keyboard.keyPressed();
+
+        //     if (~(curKey = 0) ) {
+        //         if ( ~(curKey = prevKey) ) { 
+        //             // is new key pressed -> handle and save time/key value
+                    
+        //             // handle key press functionality
+        //             do handleKeyPress(curKey);
+        //             // do Output.printChar(curKey);
+                    
+        //             // update state:
+        //             let prevKeyTime = time;
+        //             let prevKey = curKey;
+        //         } else{
+        //             // is previously pressed key
+        //             if ((time - prevKeyTime) > kbdTicks) {
+        //                 // re-handle key press
+        //                 do handleKeyPress(curKey);
+        //                 // do Output.printChar(curKey);
+
+        //                 // update state:
+        //                 let prevKeyTime = time;
+        //                 let prevKey = curKey;
+        //             }
+        //         }
+        //     }
+
+        //     let time = time + 1;
+        // }
+
         return false;
     }
 
-    method void handleKeyPress(int curKey){
+    method void handleKeyPress(){
+        var int curKey;
+        var boolean canMoveFlag;
+
+        let curKey = Keyboard.keyPressed();
+
+        // edge actions -> once per press - hard drop, rotates
+        if ( (~(curKey = 0)) & (~(curKey = prevKey)) ) {
+            // space => hard drop
+            if (curKey = 32){
+                do currentPiece.hardDrop(grid);
+                let onGround = true;
+                let lockCounter = lockDelayFrames;
+            }
+
+            // x or up arrow => rotateCW
+            if ((curKey = 131) | (curKey = 120)){
+                if ( ~((currentPiece.getType()) = 1) ){
+                    do currentPiece.tryRotateCW(grid);
+                    let lockCounter = 0;
+                }
+            }
+
+            // z => rotateCCW
+            if ((curKey = 122)){
+                if ( ~((currentPiece.getType()) = 1) ){
+                    do currentPiece.tryRotateCCW(grid);
+                    let lockCounter = 0;
+                }
+            }
+
+        }
+
+        
+        // lateral hold -- dealyed auto shift/auto repeat rate (DAS/ARR)
+        // right arrow => move piece right 1
+        if ((curKey = 132) | (curKey = 130)){
+            if (curKey = 132){
+                if (~(lrHold = 1)){
+                    let lrHold = 1;
+                    let dasCounter = 0;
+                    let arrCounter = 0;
+                    do currentPiece.tryMove(grid, 1, 0);
+                    let lockCounter = 0;
+                }
+            }
+            // left arrow => move piece left 1
+            if (curKey = 130){
+                if (~(lrHold = -1)){
+                    let lrHold = -1;
+                    let dasCounter = 0;
+                    let arrCounter = 0;                
+                    do currentPiece.tryMove(grid, -1, 0);
+                    let lockCounter = 0;
+                }
+            }
+        } else {
+            let lrHold = 0;
+        }
+
+        // if holding left/right, count DAS then ARR repeats
+        if (~(lrHold = 0)) {
+            let dasCounter = dasCounter + 1;
+            if (arrCounter > (arrFrames-1)) {
+                if (lrHold = 1){
+                    do currentPiece.tryMove(grid, 1, 0);
+                }
+                if (lrHold = -1){
+                    do currentPiece.tryMove(grid, -1, 0);
+                }
+                let arrCounter = 0;
+                let lockCounter = 0;
+            }
+        }
+
+
+        // soft drop (held down)
         // down arrow => move piece down 1 (soft drop)
         if (curKey = 133){
-            do currentPiece.tryMove(grid, 0, 1);
-        }
-        
-        // right arrow => move piece right 1
-        if (curKey = 132){
-            do currentPiece.tryMove(grid, 1, 0);
-        }
-
-        // left arrow => move piece left 1
-        if (curKey = 130){
-            do currentPiece.tryMove(grid, -1, 0);
-        }
-
-        // space => hard drop
-        if (curKey = 32){
-            do currentPiece.hardDrop(grid);
-        }
-
-        // x or up arrow => rotateCW
-        if ((curKey = 131) | (curKey = 120)){
-            if ( ~((currentPiece.getType()) = 1) ){
-                do currentPiece.tryRotateCW(grid);
+            let canMoveFlag = currentPiece.canMove(grid, 0, 1);
+            if (canMoveFlag){
+                do currentPiece.tryMove(grid, 0, 1);
+                let onGround = false;
+                let lockCounter = 0;
+            } else {
+                let onGround = true;
             }
         }
 
-        // z => rotateCCW
-        if ((curKey = 122)){
-            if ( ~((currentPiece.getType()) = 1) ){
-                do currentPiece.tryRotateCCW(grid);
-            }
-        }
-
+        let prevKey = curKey;
         return;
     }
 
@@ -239,7 +484,39 @@ class TetrisGame {
         return;
     }
 
+    method void seedPrevPieceCells(Array src){
+        var int i;
+        let i = 0;
+
+        while (i < 12){
+            let prevPieceCells[i] = src[i];
+            let i = i + 1;
+        }
+
+        return;
+    }
+
+    method void eraseCell(int r, int c) {
+        // draw background color just for this cell
+        do grid.drawOverPoint(r, c, false);
+        return;
+    }
+
+    method void drawCell(int r, int c) {
+        do grid.drawOverPoint(r, c, true);
+        return;
+    }
+
+    method boolean sameCell(int aR, int aC, int bR, int bC) {
+        var boolean ret;
+        let ret = ((aR = bR) & (aC = bC)); 
+        return ret;
+    }
+
     method void dispose(){
+        do prevPieceCells.dispose();
+        do grid.dispose();
+        do currentPiece.dispose();
         do Memory.deAlloc(this);
         return;
     }
