@@ -16,8 +16,8 @@ class Piece {
         let colPos = y;
         let rotationIndex = 0;
 
-        let boundingBox = Matrix.new(4, 4, 0);
-        let boundingBoxSize = 4;
+        // let boundingBox = Matrix.new(4, 4, 0);
+        // let boundingBoxSize = 4;
         // do boundingBox.set_point(1,2,1);
         // do boundingBox.set_point(2,2,1);
         // do boundingBox.set_point(3,2,1);
@@ -113,29 +113,187 @@ class Piece {
         return;
     }   
 
-    method void move(int dc, int dr){
+    method void tryMove(Grid board, int dc, int dr){
         // dc is change to column position (left/right)
         // dr is change to row position (up/down)
-        var int newRow, newCol;
-        let newRow = rowPos + dr;
-        let newCol = colPos + dc;
+        
+        var boolean canBeMoved;
+        let canBeMoved = canMove(board, dc, dr);
 
-        do setRow(newRow);
-        do setCol(newCol);
+        if (canBeMoved) {
+            let rowPos = rowPos + dr;
+            let colPos = colPos + dc;
+        }
 
         return;
     }
 
-    method boolean canMove(){
+    method boolean canMove(Grid board, int dc, int dr){
+        var boolean ret;
 
+        let ret = canPlaceWith(board, boundingBox, rowPos, colPos, dr, dc);
+        
+        return ret;
+    }
+
+    method Matrix rotateCW(Matrix src, int N){
+        var Matrix dst;
+        var int r, c, v;
+        let dst = Matrix.new(N, N, 0);
+
+        let r = 1;
+        while (r < (N+1)) {
+            let c = 1;
+            while (c < (N+1)) {
+                let v = src.get((N-c+1), r);
+                if (v = 1){
+                    do dst.set_point(r,c,1);
+                }
+                let c = c + 1;
+            }
+            let r = r + 1;
+        }
+
+        return dst;
+    }
+
+    method Matrix rotateCCW(Matrix src, int N){
+        var Matrix dst;
+        var int r, c, v;
+        let dst = Matrix.new(N, N, 0);
+
+        let r = 1;
+        while (r < (N+1)) {
+            let c = 1;
+            while (c < (N+1)) {
+                let v = src.get(c, (N-r+1));
+                if (v = 1){
+                    do dst.set_point(r,c,1);
+                }
+                let c = c + 1;
+            }
+            let r = r + 1;
+        }
+
+        return dst;
+    }
+
+    method boolean canPlaceWith(Grid board, Matrix shape, int baseRow, int baseCol, int dy, int dx){
+        var int N, r, c, y, x, rows, cols, v;
+
+        let N = boundingBoxSize;
+        let rows = board.getRows();
+        let cols = board.getCols();
+
+        let r = 1;
+        while (r < (N+1)){
+            let c = 1;
+            while (c < (N+1)){
+                let v = shape.get(r, c);
+                if (v = 1){
+                    let y = baseRow + dy + r - 1;
+                    let x = baseCol + dx + c - 1;
+                
+                    if ((x<1) | (x > cols) | (y<1) | (y > rows)){
+                        // OOB
+                        return false;
+                    }
+
+                    if (board.getPoint(y, x) = 1){
+                        // point already occupied
+                        return false;
+                    }
+                }
+                let c = c + 1;
+            }
+            let r = r + 1;
+        }
 
         return true;
     }
 
-    method boolean canRotate(){
+    method boolean tryRotateCW(Grid board){
+        var Matrix rot;
+        var int i, dx, dy;
+        var boolean canPlace;
+        
+        let rot = rotateCW(boundingBox, boundingBoxSize);
 
+        // wall kicks
+        let i = 0;
+        while (i < 4){
+            if (i = 0) {
+                let dx = 0;
+                let dy = 0;
+            }
+            if (i = 1) {
+                let dx = 1;
+                let dy = 0;
+            }
+            if (i = 2) {
+                let dx = -1;
+                let dy = 0;
+            }
+            if (i = 3) {
+                let dx = 0;
+                let dy = -1;
+            }
 
-        return true;
+            let canPlace = canPlaceWith(board, rot, rowPos, colPos, dy, dx); 
+            if (canPlace) {
+                do boundingBox.dispose();
+                let boundingBox = rot;
+                let colPos = colPos + dx;
+                let rowPos = rowPos + dy;
+                return true;
+            }
+            let i = i + 1;
+        }
+
+        do rot.dispose();
+        return false;
+    }
+   
+    method boolean tryRotateCCW(Grid board){
+        var Matrix rot;
+        var int i, dx, dy;
+        var boolean canPlace;
+        
+        let rot = rotateCCW(boundingBox, boundingBoxSize);
+
+        // wall kicks
+        let i = 0;
+        while (i < 4){
+            if (i = 0) {
+                let dx = 0;
+                let dy = 0;
+            }
+            if (i = 1) {
+                let dx = 1;
+                let dy = 0;
+            }
+            if (i = 2) {
+                let dx = -1;
+                let dy = 0;
+            }
+            if (i = 3) {
+                let dx = 0;
+                let dy = -1;
+            }
+
+            let canPlace = canPlaceWith(board, rot, rowPos, colPos, dy, dx); 
+            if (canPlace) {
+                do boundingBox.dispose();
+                let boundingBox = rot;
+                let colPos = colPos + dx;
+                let rowPos = rowPos + dy;
+                return true;
+            }
+            let i = i + 1;
+        }
+
+        do rot.dispose();
+        return false;
     }
 
     method void drawPieceInGrid(int horizontal_offset, int box_size, int space_size){
@@ -152,38 +310,6 @@ class Piece {
 
         return;
     }
-
-/*
-    method boolean canRotate(){
-
-        return;
-    }
-
-    method void rotate(){
-
-        return;
-    }
-
-    method boolean isLocked(){
-
-        return;
-    }
-
-    method void move(){
-
-        return;
-    }
-
-    method void canMove(){
-
-        return;
-    }
-
-    method void drop(){
-
-        return;
-    }
-*/
 
     method void dispose(){
         do Memory.deAlloc(this);

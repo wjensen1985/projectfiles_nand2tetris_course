@@ -91,11 +91,11 @@ class TetrisGame {
 
                 let i = i + 3;
             } 
+            do pieceGridPts.dispose();
         }
 
 
         
-        do pieceGridPts.dispose();
         return;
     }
 
@@ -133,7 +133,7 @@ class TetrisGame {
                     
                     // handle key press functionality
                     do handleKeyPress(curKey);
-                    do Output.printChar(curKey);
+                    // do Output.printChar(curKey);
                     
                     // update state:
                     let prevKeyTime = time;
@@ -143,7 +143,7 @@ class TetrisGame {
                     if ((time - prevKeyTime) > kbdTicks) {
                         // re-handle key press
                         do handleKeyPress(curKey);
-                        do Output.printChar(curKey);
+                        // do Output.printChar(curKey);
 
                         // update state:
                         let prevKeyTime = time;
@@ -160,11 +160,32 @@ class TetrisGame {
     }
 
     method void handleKeyPress(int curKey){
-        if (curKey = 97){
-            do currentPiece.move(1,0);
+        if (curKey = 133){
+            // down arrow => move piece down 1 (soft drop)
+            do currentPiece.tryMove(grid, 0, 1);
         }
-        if (curKey = 100){
-            do currentPiece.move(0, 1);
+        if (curKey = 132){
+            // right arrow => move piece right 1
+            do currentPiece.tryMove(grid, 1, 0);
+        }
+        if (curKey = 130){
+            // left arrow => move piece left 1
+            do currentPiece.tryMove(grid, -1, 0);
+        }
+
+        // if (curKey = 32){
+        //     // space => hard drop
+
+        // }
+
+        if ((curKey = 131) | ( curKey = 114) | (curKey = 120)){
+            // r or up arrow => rotateCW
+            do currentPiece.tryRotateCW(grid);
+        }
+
+        if ((curKey = 122)){
+            // z => rotateCCW
+            do currentPiece.tryRotateCCW(grid);
         }
 
         return;
