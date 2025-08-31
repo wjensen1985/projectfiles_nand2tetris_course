@@ -26,6 +26,8 @@ class TetrisGame {
     field int lockDelayFrames;
     field int lockCounter;
     field boolean onGround;
+    field int softDropFrames;
+    field int softDropCounter;
 
     constructor TetrisGame new(int initScore, int initLevel){
         let score = initScore;
@@ -40,12 +42,12 @@ class TetrisGame {
         let kbdTicks = 500;
 
 
-        let gravityFrames = 30;
+        let gravityFrames = 100;
         let gravityCounter = 0;
         let firstFrame = true;
 
-        let dasFrames = 10;
-        let arrFrames = 2;
+        let dasFrames = 20;
+        let arrFrames = 5;
         let lrHold = 0;
         let dasCounter = 0;
         let arrCounter = 0;
@@ -53,6 +55,9 @@ class TetrisGame {
         let lockDelayFrames = 30;
         let lockCounter = 0;
         let onGround = false;
+
+        let softDropFrames = 20;
+        let softDropCounter = 0;
 
         let prevPieceCells = Array.new(12);
 
@@ -280,60 +285,6 @@ class TetrisGame {
 
         }
 
-
-
-        // let time = 0;
-        // let prevFrameTime = 0;
-        // let prevKeyTime = 0;
-        // let timeDiff = 0;
-
-        // // time < 20000
-        // while(true) {
-            
-        //     // update time step:
-        //     if (timeDiff > updateTicks){
-        //         let prevFrameTime = time;
-        //     }
-        //     let timeDiff = time - prevFrameTime;
-            
-        //     // check current piece can be locked/is in_bounds:
-
-
-        //     // update screen/draw current game state:
-        //     do draw(timeDiff);
-
-
-        //     // Get User input:
-        //     let curKey = Keyboard.keyPressed();
-
-        //     if (~(curKey = 0) ) {
-        //         if ( ~(curKey = prevKey) ) { 
-        //             // is new key pressed -> handle and save time/key value
-                    
-        //             // handle key press functionality
-        //             do handleKeyPress(curKey);
-        //             // do Output.printChar(curKey);
-                    
-        //             // update state:
-        //             let prevKeyTime = time;
-        //             let prevKey = curKey;
-        //         } else{
-        //             // is previously pressed key
-        //             if ((time - prevKeyTime) > kbdTicks) {
-        //                 // re-handle key press
-        //                 do handleKeyPress(curKey);
-        //                 // do Output.printChar(curKey);
-
-        //                 // update state:
-        //                 let prevKeyTime = time;
-        //                 let prevKey = curKey;
-        //             }
-        //         }
-        //     }
-
-        //     let time = time + 1;
-        // }
-
         return false;
     }
 
@@ -416,15 +367,22 @@ class TetrisGame {
         // soft drop (held down)
         // down arrow => move piece down 1 (soft drop)
         if (curKey = 133){
-            let canMoveFlag = currentPiece.canMove(grid, 0, 1);
-            if (canMoveFlag){
-                do currentPiece.tryMove(grid, 0, 1);
-                let onGround = false;
-                let lockCounter = 0;
-            } else {
-                let onGround = true;
+            let softDropCounter = softDropCounter + 1;
+            if (softDropCounter > (softDropFrames -1)){
+                let canMoveFlag = currentPiece.canMove(grid, 0, 1);
+                if (canMoveFlag){
+                    do currentPiece.tryMove(grid, 0, 1);
+                    let onGround = false;
+                    let lockCounter = 0;
+                } else {
+                    let onGround = true;
+                }
+                let softDropCounter = 0;
             }
+        } else {
+            let softDropCounter = 0;
         }
+        
 
         let prevKey = curKey;
         return;
