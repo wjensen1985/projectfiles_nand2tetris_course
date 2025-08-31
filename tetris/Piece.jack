@@ -139,7 +139,7 @@ class Piece {
             let ret[i+2] = 0;
             let i = i + 3;
         }
-        
+
         return ret;
     }
 
@@ -399,6 +399,15 @@ class Piece {
 
         do rot.dispose();
         return false;
+    }
+
+    method void hardDrop(Grid board){
+        // move piece down while valid position
+        while (canMove(board, 0, 1)){
+            let rowPos = rowPos + 1;
+        }
+
+        return;
     }
 
     method void drawPieceInGrid(int horizontal_offset, int box_size, int space_size){

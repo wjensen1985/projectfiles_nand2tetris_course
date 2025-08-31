@@ -17,7 +17,7 @@ class TetrisGame {
         let score = initScore;
         let level = initLevel;
         let grid = Grid.new(20, 10);
-        let currentPiece = Piece.new(6, 4, 4);
+        let currentPiece = Piece.new(3, 4, 4);
         let time = 0;
         let prevFrameTime = 0;
         let updateTicks = 200;
@@ -148,33 +148,35 @@ class TetrisGame {
     }
 
     method void handleKeyPress(int curKey){
+        // down arrow => move piece down 1 (soft drop)
         if (curKey = 133){
-            // down arrow => move piece down 1 (soft drop)
             do currentPiece.tryMove(grid, 0, 1);
         }
+        
+        // right arrow => move piece right 1
         if (curKey = 132){
-            // right arrow => move piece right 1
             do currentPiece.tryMove(grid, 1, 0);
         }
+
+        // left arrow => move piece left 1
         if (curKey = 130){
-            // left arrow => move piece left 1
             do currentPiece.tryMove(grid, -1, 0);
         }
 
-        // if (curKey = 32){
-        //     // space => hard drop
+        // space => hard drop
+        if (curKey = 32){
+            do currentPiece.hardDrop(grid);
+        }
 
-        // }
-
-        if ((curKey = 131) | ( curKey = 114) | (curKey = 120)){
-            // r or up arrow => rotateCW
+        // x or up arrow => rotateCW
+        if ((curKey = 131) | (curKey = 120)){
             if ( ~((currentPiece.getType()) = 1) ){
                 do currentPiece.tryRotateCW(grid);
             }
         }
 
+        // z => rotateCCW
         if ((curKey = 122)){
-            // z => rotateCCW
             if ( ~((currentPiece.getType()) = 1) ){
                 do currentPiece.tryRotateCCW(grid);
             }
