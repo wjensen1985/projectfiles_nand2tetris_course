@@ -81,7 +81,7 @@ class Piece {
                 let tmp = boundingBox.get(bbRow, bbCol);
                 // do Output.printInt(tmp);
                 if (tmp = 1){
-                    let ret[i] = rowPos + bbRow - 1 + 2;
+                    let ret[i] = rowPos + bbRow - 1;
                     let ret[i+1] = colPos + bbCol - 1;
                     let ret[i+2] = tmp;
                     let i = i + 3;

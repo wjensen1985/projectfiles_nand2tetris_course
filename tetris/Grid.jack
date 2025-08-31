@@ -180,7 +180,7 @@ class Grid {
     }
 
     method int getPoint(int row, int col){
-        return points_grid.get(row, col);
+        return points_grid.get((row + hiddenRows), col);
     }
 
     method int getBoxSize(){
