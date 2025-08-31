@@ -13,22 +13,11 @@ class TetrisGame {
     field int prevKeyTime;
     field int kbdTicks;
 
-
-    /* 
-    other fields:
-     - current piece
-     - next piece
-     - last piece (can't have)
-     - piece bag
-     - array of pieces -> pop as use?
-     - grid
-    */
-
     constructor TetrisGame new(int initScore, int initLevel){
         let score = initScore;
         let level = initLevel;
         let grid = Grid.new(20, 10);
-        let currentPiece = Piece.new(1, 4, 4);
+        let currentPiece = Piece.new(6, 4, 4);
         let time = 0;
         let prevFrameTime = 0;
         let updateTicks = 200;
@@ -73,9 +62,8 @@ class TetrisGame {
             do grid.draw();        
             // draw in the current Pieces 'active' points
             let pieceGridPts = currentPiece.calcGridCoords();
-            let lenPts = currentPiece.get_bb_size();
-            // (r, c, val)
-            let lenPts = (lenPts * 3);
+            // (r, c, val) for each block in piece (4blocks in every piece)
+            let lenPts = 12;
 
             let i = 0;
             while (i < lenPts){
@@ -180,12 +168,16 @@ class TetrisGame {
 
         if ((curKey = 131) | ( curKey = 114) | (curKey = 120)){
             // r or up arrow => rotateCW
-            do currentPiece.tryRotateCW(grid);
+            if ( ~((currentPiece.getType()) = 1) ){
+                do currentPiece.tryRotateCW(grid);
+            }
         }
 
         if ((curKey = 122)){
             // z => rotateCCW
-            do currentPiece.tryRotateCCW(grid);
+            if ( ~((currentPiece.getType()) = 1) ){
+                do currentPiece.tryRotateCCW(grid);
+            }
         }
 
         return;

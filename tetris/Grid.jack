@@ -20,6 +20,13 @@ class Grid {
      - clearRow
      -- clears a given row
     */
+    // checks what row(s) in the grid can be cleared
+/*
+    method int canClearRows(){
+
+        return;
+    }
+*/
 
     // draws current grid state on to the screen
     method void draw(){
@@ -74,13 +81,6 @@ class Grid {
         return;
     }
 
-    // checks what row(s) in the grid can be cleared
-/*
-    method int canClearRows(){
-
-        return;
-    }
-*/
 
     // clears a given row -> set to all 0
     method void clearRow(int row){

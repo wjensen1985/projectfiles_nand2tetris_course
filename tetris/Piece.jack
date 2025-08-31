@@ -26,20 +26,76 @@ class Piece {
 
         // Types: 0: "I", 1: "O", 2: "Z", 3: "S", 4: "T", 5: "J", 6: "L"
 
-        if ((initType = 0) | (initType = 1)){
+        // "I"
+        if ((initType = 0)){
+            let boundingBox = Matrix.new(4, 4, 0);
+            let boundingBoxSize = 4;
+            do boundingBox.set_point(2,1,1);
+            do boundingBox.set_point(2,2,1);
+            do boundingBox.set_point(2,3,1);
+            do boundingBox.set_point(2,4,1);
+        }
+
+        // "O"
+        if ((initType = 1)){
             let boundingBox = Matrix.new(4, 4, 0);
             let boundingBoxSize = 4;
             do boundingBox.set_point(1,2,1);
+            do boundingBox.set_point(1,3,1);
             do boundingBox.set_point(2,2,1);
-            do boundingBox.set_point(3,2,1);
-            do boundingBox.set_point(4,2,1);
-        }else{
+            do boundingBox.set_point(2,3,1);
+        }
+
+        // "Z"
+        if ((initType = 2)){
             let boundingBox = Matrix.new(3, 3, 0);
             let boundingBoxSize = 3;
+            do boundingBox.set_point(1,1,1);
             do boundingBox.set_point(1,2,1);
             do boundingBox.set_point(2,2,1);
-            do boundingBox.set_point(3,2,1);
+            do boundingBox.set_point(2,3,1);
         }
+
+        // "S"
+        if ((initType = 3)){
+            let boundingBox = Matrix.new(3, 3, 0);
+            let boundingBoxSize = 3;
+            do boundingBox.set_point(2,1,1);
+            do boundingBox.set_point(2,2,1);
+            do boundingBox.set_point(1,2,1);
+            do boundingBox.set_point(1,3,1);
+        }
+
+        // "T"
+        if ((initType = 4)){
+            let boundingBox = Matrix.new(3, 3, 0);
+            let boundingBoxSize = 3;
+            do boundingBox.set_point(2,1,1);
+            do boundingBox.set_point(2,2,1);
+            do boundingBox.set_point(2,3,1);
+            do boundingBox.set_point(1,2,1);
+        }
+ 
+        // "J"
+        if ((initType = 5)){
+            let boundingBox = Matrix.new(3, 3, 0);
+            let boundingBoxSize = 3;
+            do boundingBox.set_point(1,1,1);
+            do boundingBox.set_point(2,1,1);
+            do boundingBox.set_point(2,2,1);
+            do boundingBox.set_point(2,3,1);
+        }
+
+        // "L"
+        if ((initType = 6)){
+            let boundingBox = Matrix.new(3, 3, 0);
+            let boundingBoxSize = 3;
+            do boundingBox.set_point(2,1,1);
+            do boundingBox.set_point(2,2,1);
+            do boundingBox.set_point(2,3,1);
+            do boundingBox.set_point(1,3,1);
+        }
+
 
         return this;
     }
@@ -48,28 +104,12 @@ class Piece {
         return boundingBoxSize;
     }
 
-    // method void placeInGrid(Grid grid){
-    //     var Array piecePoints;
-    //     // piece points from rotation point
-    //     // --> array of points for piece
-    //     // do Output.printChar(type);
-
-    //     let piecePoints = calcGridCoords(rowPos, colPos, type);
-        
-    //     // for point in point list, set point in grid
-    //     // list of poitns [r1, c1, value, r2, c2...], #points, value
-    //     do grid.placePointsList(piecePoints, 4);
-
-    //     return;
-    // }
-
     method Array calcGridCoords(){
         var Array ret;
-        var int i, bbRow, bbCol, tmp, retSize;
+        var int i, bbRow, bbCol, tmp;
         let i = 0;
-        let retSize = (boundingBoxSize * boundingBoxSize * 3);
-        let ret = Array.new(retSize);
-        // let ret = Array.new((4*3));
+        // let ret = Array.new((4*3)); --> 4 blocks for each piece so 4*(r,c,val)
+        let ret = Array.new(12);
 
 
         let bbRow = 1;
@@ -92,6 +132,14 @@ class Piece {
             let bbRow = bbRow + 1;
         }
 
+        // zero pad in case issue:
+        while (i < 12) {
+            let ret[i] = 0;
+            let ret[i+1] = 0;
+            let ret[i+2] = 0;
+            let i = i + 3;
+        }
+        
         return ret;
     }
 
@@ -101,6 +149,10 @@ class Piece {
 
     method int getCol(){
         return colPos;
+    }
+
+    method int getType(){
+        return type;
     }
 
     method void setRow(int newRowPos){
@@ -214,14 +266,21 @@ class Piece {
 
     method boolean tryRotateCW(Grid board){
         var Matrix rot;
-        var int i, dx, dy;
-        var boolean canPlace;
+        var int i, dx, dy, rotLimit;
+        var boolean canPlace, isIpiece;
         
         let rot = rotateCW(boundingBox, boundingBoxSize);
+        if (type = 0){
+            let isIpiece = true; 
+            let rotLimit = 7;
+        }else{
+            let isIpiece = false; 
+            let rotLimit = 5;
+        }
 
         // wall kicks
         let i = 0;
-        while (i < 4){
+        while (i < rotLimit){
             if (i = 0) {
                 let dx = 0;
                 let dy = 0;
@@ -234,10 +293,26 @@ class Piece {
                 let dx = -1;
                 let dy = 0;
             }
-            if (i = 3) {
+            // I-specific rotations
+            if ((i = 3) & isIpiece) {
+                let dx = 2;
+                let dy = 0;
+            }
+            if ((i = 4) & isIpiece) {
+                let dx = -2;
+                let dy = 0;
+            }
+            // back to all
+            if ( (i=5) & isIpiece | (i=3) & ~(isIpiece) ){
+                let dx = 0;
+                let dy = 1;
+            }
+            if ( (i=6) & isIpiece | (i=4) & ~(isIpiece) ){
                 let dx = 0;
                 let dy = -1;
             }
+
+
 
             let canPlace = canPlaceWith(board, rot, rowPos, colPos, dy, dx); 
             if (canPlace) {
@@ -256,14 +331,21 @@ class Piece {
    
     method boolean tryRotateCCW(Grid board){
         var Matrix rot;
-        var int i, dx, dy;
-        var boolean canPlace;
+        var int i, dx, dy, rotLimit;
+        var boolean canPlace, isIpiece;
         
         let rot = rotateCCW(boundingBox, boundingBoxSize);
+        if (type = 0){
+            let isIpiece = true; 
+            let rotLimit = 7;
+        }else{
+            let isIpiece = false; 
+            let rotLimit = 5;
+        }
 
         // wall kicks
         let i = 0;
-        while (i < 4){
+        while (i < rotLimit){
             if (i = 0) {
                 let dx = 0;
                 let dy = 0;
@@ -276,10 +358,33 @@ class Piece {
                 let dx = -1;
                 let dy = 0;
             }
-            if (i = 3) {
+            // I-specific rotations
+            if ((i = 3) & isIpiece) {
+                let dx = 2;
+                let dy = 0;
+            }
+            if ((i = 4) & isIpiece) {
+                let dx = -2;
+                let dy = 0;
+            }
+            // back to all
+            if ( (i=5) & isIpiece | (i=3) & ~(isIpiece) ){
+                let dx = 0;
+                let dy = 1;
+            }
+            if ( (i=6) & isIpiece | (i=4) & ~(isIpiece) ){
                 let dx = 0;
                 let dy = -1;
             }
+            // // I-specific rotations
+            // if ((i = 7) & isIpiece) {
+            //     let dx = 0;
+            //     let dy = 2;
+            // }
+            // if ((i = 8) & isIpiece) {
+            //     let dx = 0;
+            //     let dy = -2;
+            // }
 
             let canPlace = canPlaceWith(board, rot, rowPos, colPos, dy, dx); 
             if (canPlace) {
