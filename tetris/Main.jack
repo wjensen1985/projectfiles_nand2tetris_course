@@ -3,20 +3,127 @@ class Main {
 
     function void main() {
         var TetrisGame game;
-        var boolean game_state;
+        var int lastScore, initLevel;
+        var boolean game_state, running;
 
-        let game_state = true;
-        let game = TetrisGame.new(0,0);
+        let running = true;
+        let lastScore = 0;
+        let initLevel = 0;
 
-        do game.setup();
+        while (running){
+            // show menu and wait for key press to start next game
+            do showMenu(lastScore);
+            do waitForAnyKey();
 
-        while(game_state){
+            // clear menu screen before starting the game
+            do Screen.clearScreen();
+
+            // start a fresh game
+            let game = TetrisGame.new(0,0);
+            do game.setup();
+
             // play the game
-            let game_state = game.play();            
+            let game_state = true;
+            while(game_state){
+                let game_state = game.play();   
+            }
+
+            // record last score to show on menu
+            let lastScore = game.get_score();
+
+            // clean up
+            do game.dispose();
             
+            // restart loop (back to menu)
         }
 
-        do game.dispose();
         return;
     }
+
+    method void showMenu(int lastScore){
+        var int cx, cy, centerCol, centerRow;
+        var int halfWChars, halfHRows, left, right, top, bottom;
+
+        // Screen center in pixels:
+        let cx = 256;  // 512/2
+        let cy = 128;  // 256/2
+
+        // Center in character cells (8×11):
+        let centerCol = Math.divide(cx, 8);   // 32
+        let centerRow = Math.divide(cy, 11);  // 11
+
+        // Panel size in CHARACTER cells (keeps edges aligned to text grid)
+        let halfWChars = 20;  // total width = 40 chars
+        let halfHRows  = 6;   // total height = 12 rows
+
+        // Convert to pixel rectangle, snapped to 8×11 grid
+        let left   = cx - (halfWChars * 8);
+        let right  = cx + (halfWChars * 8);
+        let top    = cy - (halfHRows  * 11);
+        let bottom = cy + (halfHRows  * 11);
+
+        // Clear and draw panel
+        do Screen.clearScreen();
+        do Screen.setColor(true);
+        do Screen.drawRectangle(left, top, right, bottom);
+        do Screen.setColor(false);
+        do Screen.drawRectangle((left+2), (top+2), (right-2), (bottom-2));
+
+        // Centered title and lines
+        do Screen.setColor(true);
+        do printCentered("TETRIS", (centerRow - 3), centerCol);
+        do printCenteredLabelInt("Previous score: ", lastScore, centerRow, centerCol);
+        do printCentered("Press any key to play again", (centerRow + 3), centerCol);
+        return;
+    }
+
+    method void printCenteredLabelInt(String label, int value, int row, int centerCol) {
+        var int l, d, startCol;
+        let l = label.length();
+        let d = digits(value);
+        let startCol = centerCol - Math.divide((l + d), 2);
+        do Output.moveCursor(row, startCol);
+        do Output.printString(label);
+        do Output.printInt(value);
+        return;
+    }
+
+    method void printCentered(String s, int row, int centerCol) {
+        var int len, startCol;
+        let len = s.length();
+        let startCol = centerCol - Math.divide(len, 2);
+        do Output.moveCursor(row, startCol);
+        do Output.printString(s);
+        return;
+    }
+
+    method int digits(int x) {
+        var int n, t;
+        if (x < 0) { let x = 0; }   // safety
+        if (x = 0) { return 1; }
+        let n = 0;
+        let t = x;
+        while (~(t = 0)) {
+            let t = Math.divide(t, 10);
+            let n = n + 1;
+        }
+        return n;
+    }
+
+    method void waitForAnyKey(){
+        while (~((Keyboard.keyPressed()) = 0)) {
+            do Sys.wait(1);
+        }
+        
+        while ((Keyboard.keyPressed()) = 0) {
+            do Sys.wait(1);
+        }
+
+        while (~((Keyboard.keyPressed()) = 0)) {
+            do Sys.wait(1);
+        }
+
+        return;
+    }
+
 }
