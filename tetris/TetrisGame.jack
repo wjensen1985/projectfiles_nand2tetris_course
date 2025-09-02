@@ -31,6 +31,11 @@ class TetrisGame {
 
     field int nextType;
 
+    field int lines;
+    field int startLevel;
+    field int nextLeveLineThreshold;
+    field boolean gameOver;
+
     constructor TetrisGame new(int initScore, int initLevel){
         let score = initScore;
         let level = initLevel;
@@ -64,6 +69,14 @@ class TetrisGame {
 
         let currentPiece = Piece.new(3, 1, 4);
         let nextType = 0;
+
+        let lines = 0;
+        let startLevel = initLevel;
+        let gameOver = false;
+
+        let nextLeveLineThreshold = (startLevel * 10) + 10;
+        let level = initLevel;
+        do updateGravityForLevel();
 
         return this;
     }
@@ -131,7 +144,7 @@ class TetrisGame {
         var int timeDiff, i, j, found, cleared;
         var boolean canMoveFlag2, arrFlag, canPlay, rotHoldFlag;
 
-        while (true){
+        while (~(gameOver)){
             // read & handle input
             do handleKeyPress();
 
@@ -161,10 +174,18 @@ class TetrisGame {
                     
                     // clear lines
                     let cleared = grid.clearFullLines();
+                    if (cleared > 0){
+                        do updateScoreAndLevel(cleared);
+                    }
+                    do drawHUD();
                     do grid.draw();
 
                     // spawn next active piece
                     do spawnNewPiece();
+
+                    if (gameOver){
+                        return false;
+                    }
 
                     // reset lock state
                     let lockCounter = 0;
@@ -179,6 +200,7 @@ class TetrisGame {
 
             // render active piece (only changes vs. previous frame)
             if (firstFrame){
+                do drawHUD();
                 do grid.draw();
                 let i = 0;
                 while (i < 12){
@@ -307,7 +329,7 @@ class TetrisGame {
     }
 
     method void handleKeyPress(){
-        var int curKey;
+        var int curKey, dst;
         var boolean canMoveFlag;
 
         let curKey = Keyboard.keyPressed();
@@ -316,7 +338,8 @@ class TetrisGame {
         if ( (~(curKey = 0)) & (~(curKey = prevKey)) ) {
             // space => hard drop
             if (curKey = 32){
-                do currentPiece.hardDrop(grid);
+                let dst = currentPiece.hardDrop(grid);
+                do addHardDropPoints(dst);
                 let onGround = true;
                 let lockCounter = lockDelayFrames;
             }
@@ -398,6 +421,7 @@ class TetrisGame {
                     do currentPiece.tryMove(grid, 0, 1);
                     let onGround = false;
                     let lockCounter = 0;
+                    do addSoftDropPoint(1);
                 } else {
                     let onGround = true;
                 }
@@ -539,7 +563,8 @@ class TetrisGame {
 
         if (~(currentPiece.canMove(grid, 0, 0))) {
             // game over
-            do Sys.wait(1000);
+            let gameOver = true;
+            return;
         }
 
         // reset movement/lock timers
@@ -548,6 +573,97 @@ class TetrisGame {
         let lrHold = 0;
         let dasCounter = 0;
         let arrCounter = 0;
+
+        return;
+    }
+
+    method void updateScoreAndLevel(int cleared){
+        var int base, add, wasBelow, wasAbove;
+
+        if (cleared = 0){
+            return;
+        }
+
+        if (cleared = 1){
+            let base = 40;
+        }
+        if (cleared = 2){
+            let base = 100;
+        }
+        if (cleared = 3){
+            let base = 300;
+        }
+        if (cleared = 4){
+            let base = 1200;
+        }
+
+        let add = (base * (level + 1));
+        let score = score + add;
+
+        let lines = lines + cleared;
+
+        if (lines > (nextLeveLineThreshold -1)){
+            let level = level + 1;
+            let nextLeveLineThreshold = nextLeveLineThreshold + 10;
+            do updateGravityForLevel();
+        }
+
+        return;
+    }
+
+    method void addSoftDropPoint(int cells){
+        let score = score + cells;
+        return;
+    }
+
+    method void updateGravityForLevel(){
+        var int f;
+
+        if (level = 0){ let f = (48 * 2); }
+        if (level = 1){ let f = (43 * 2); }
+        if (level = 2){ let f = (38 * 2); }
+        if (level = 3){ let f = (33 * 2); }
+        if (level = 4){ let f = (28 * 2); }
+        if (level = 5){ let f = (23 * 2); }
+        if (level = 6){ let f = (18 * 2); }
+        if (level = 7){ let f = (13 * 2); }
+        if (level = 8){ let f = (8 * 2);  }
+        if (level = 9){ let f = (6 * 2);  }
+        if ((level > 9) & (level < 13)){ let f = (5 * 2); }
+        if ((level > 12) & (level < 16)){ let f = (4 * 2); }
+        if ((level > 15) & (level < 19)){ let f = (3 * 2); }
+        if ((level > 18) & (level < 29)){ let f = (2 * 2); }
+        if (level > 28){ let f = (1 * 2); }
+
+        let gravityFrames = f;
+        if (softDropFrames < gravityFrames){
+            let softDropFrames = gravityFrames;
+        }
+
+        return;
+    }
+
+    method void addHardDropPoints(int cells){
+        let score = score + (2 * cells);
+        return;
+    }
+
+    method void drawHUD(){
+        do Screen.setColor(false);
+        do Screen.drawRectangle(2, 0, 150, 12);  // wipe a strip
+        do Screen.setColor(true);
+
+        do Output.moveCursor(0,0);
+        do Output.printString("SCORE:");
+        do Output.printInt(score);
+
+        do Output.moveCursor(1,0);
+        do Output.printString("LEVEL:");
+        do Output.printInt(level);
+
+        do Output.moveCursor(2,0);
+        do Output.printString("LINES:");
+        do Output.printInt(lines);
 
         return;
     }

@@ -401,13 +401,16 @@ class Piece {
         return false;
     }
 
-    method void hardDrop(Grid board){
+    method int hardDrop(Grid board){
         // move piece down while valid position
+        var int dist;
+        let dist = 0;
         while (canMove(board, 0, 1)){
             let rowPos = rowPos + 1;
+            let dist = dist + 1;
         }
 
-        return;
+        return dist;
     }
 
     method void drawPieceInGrid(int horizontal_offset, int box_size, int space_size){
