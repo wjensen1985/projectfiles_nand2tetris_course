@@ -193,6 +193,24 @@ class Grid {
         return horizontal_offset;
     }
 
+    method void setVisiblePoint(int r, int c, int v){
+        do points_grid.set_point((r + hiddenRows), c, v);
+        return;
+    }
+
+    method void stampCells(Array coords){
+        var int i;
+        let i = 0;
+        while (i < 12){
+            if (coords[i+2] = 1){
+                do setVisiblePoint(coords[i], coords[i+1], 1);
+            }
+            let i = i + 3;
+        }
+
+        return;
+    }
+
     method int getRows(){
         return rows;
     }

@@ -29,11 +29,12 @@ class TetrisGame {
     field int softDropFrames;
     field int softDropCounter;
 
+    field int nextType;
+
     constructor TetrisGame new(int initScore, int initLevel){
         let score = initScore;
         let level = initLevel;
         let grid = Grid.new(20, 10);
-        let currentPiece = Piece.new(3, 4, 4);
         let time = 0;
         let prevFrameTime = 0;
         let updateTicks = 200;
@@ -60,6 +61,9 @@ class TetrisGame {
         let softDropCounter = 0;
 
         let prevPieceCells = Array.new(12);
+
+        let currentPiece = Piece.new(3, 1, 4);
+        let nextType = 0;
 
         return this;
     }
@@ -125,7 +129,7 @@ class TetrisGame {
     method boolean play(){
         var Array piece_grid_coords;
         var int timeDiff, i, j, found;
-        var boolean canMoveFlag2, arrFlag;
+        var boolean canMoveFlag2, arrFlag, canPlay;
 
         while (true){
             // read & handle input
@@ -149,11 +153,16 @@ class TetrisGame {
             if (onGround){
                 let lockCounter = lockCounter + 1;
                 if (lockCounter > (lockDelayFrames-1)){
-                    // need to add locking piece and clear and new piece spawn
+                    // stamp to board
+                    do lockCurrentPiece();
+                    // clear lines
+
+                    // spawn next active piece
+                    do spawnNewPiece();
+
+                    // reset lock state
                     let lockCounter = 0;
                     let onGround = false;
-                    // let piece_grid_coords = currentPiece.calcGridCoords();
-                    // do seedPrevPieceCells(piece_grid_coords);
                 }
             } else {
                 let lockCounter = 0;
@@ -458,8 +467,10 @@ class TetrisGame {
     }
 
     method void eraseCell(int r, int c) {
+        var int v;
         // draw background color just for this cell
-        do grid.drawOverPoint(r, c, false);
+        let v = grid.getPoint(r, c);
+        do grid.drawOverPoint(r, c, (v=1));
         return;
     }
 
@@ -468,10 +479,51 @@ class TetrisGame {
         return;
     }
 
+    method void lockCurrentPiece() {
+        var Array cells;
+        let cells = currentPiece.calcGridCoords();
+        do grid.stampCells(cells);
+        do cells.dispose();
+        return;
+    }
+
     method boolean sameCell(int aR, int aC, int bR, int bC) {
         var boolean ret;
         let ret = ((aR = bR) & (aC = bC)); 
         return ret;
+    }
+
+    method void spawnNewPiece() {
+        var int t, spawnRow, spawnCol;
+        
+        // choose next piece type
+        let t = nextType;
+        if (nextType = 6){
+            let nextType = 0;
+        } else {
+            let nextType = nextType + 1;
+        }
+
+        // spawn coords - center-ish
+        let spawnRow = 1;
+        let spawnCol = 4;
+
+        do currentPiece.dispose();
+        let currentPiece = Piece.new(t, spawnRow, spawnCol);
+
+        if (~(currentPiece.canMove(grid, 0, 0))) {
+            // game over
+            do Sys.wait(1000);
+        }
+
+        // reset movement/lock timers
+        let onGround = false;
+        let lockCounter = 0;
+        let lrHold = 0;
+        let dasCounter = 0;
+        let arrCounter = 0;
+
+        return;
     }
 
     method void dispose(){
