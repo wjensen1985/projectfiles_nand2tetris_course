@@ -129,7 +129,7 @@ class TetrisGame {
     method boolean play(){
         var Array piece_grid_coords;
         var int timeDiff, i, j, found, cleared;
-        var boolean canMoveFlag2, arrFlag, canPlay;
+        var boolean canMoveFlag2, arrFlag, canPlay, rotHoldFlag;
 
         while (true){
             // read & handle input
@@ -142,8 +142,11 @@ class TetrisGame {
                 if (canMoveFlag2){
                     do currentPiece.tryMove(grid, 0, 1);
                     let onGround = false;
-                    let lockCounter = 0;
+                    // let lockCounter = 0;
                 } else {
+                    if (~(onGround)){
+                        let lockCounter = 0;
+                    }
                     let onGround = true;
                 }
                 let gravityCounter = 0;
@@ -239,7 +242,9 @@ class TetrisGame {
             let i = 0;
             while (i < 12){
                 let prevPieceCells[i] = piece_grid_coords[i];
-                let i = i + 1;
+                let prevPieceCells[i+1] = piece_grid_coords[i+1];
+                let prevPieceCells[i+2] = piece_grid_coords[i+2];
+                let i = i + 3;
             }
             do piece_grid_coords.dispose();
 
@@ -259,8 +264,7 @@ class TetrisGame {
                             let arrFlag = currentPiece.canMove(grid, 1, 0);
                             if (arrFlag){
                                 do currentPiece.tryMove(grid, 1, 0);
-                                let onGround = false;
-                                let lockCounter = 0;
+                                do maybeResetlockAfterAction();
                             }
                         }
 
@@ -269,8 +273,7 @@ class TetrisGame {
                             let arrFlag = currentPiece.canMove(grid, -1, 0);
                             if (arrFlag){
                                 do currentPiece.tryMove(grid, -1, 0);
-                                let onGround = false;
-                                let lockCounter = 0;
+                                do maybeResetlockAfterAction();
                             }
                         }
 
@@ -315,22 +318,25 @@ class TetrisGame {
             if (curKey = 32){
                 do currentPiece.hardDrop(grid);
                 let onGround = true;
-                let lockCounter = 0;
+                let lockCounter = lockDelayFrames;
             }
 
             // x or up arrow => rotateCW
             if ((curKey = 131) | (curKey = 120)){
                 if ( ~((currentPiece.getType()) = 1) ){
-                    do currentPiece.tryRotateCW(grid);
-                    let lockCounter = 0;
+                    if (currentPiece.tryRotateCW(grid)){
+                        do maybeResetlockAfterAction();
+                    }
+                    
                 }
             }
 
             // z => rotateCCW
             if ((curKey = 122)){
                 if ( ~((currentPiece.getType()) = 1) ){
-                    do currentPiece.tryRotateCCW(grid);
-                    let lockCounter = 0;
+                    if (currentPiece.tryRotateCCW(grid)){
+                        do maybeResetlockAfterAction();
+                    }
                 }
             }
 
@@ -345,8 +351,10 @@ class TetrisGame {
                     let lrHold = 1;
                     let dasCounter = 0;
                     let arrCounter = 0;
-                    do currentPiece.tryMove(grid, 1, 0);
-                    let lockCounter = 0;
+                    if(currentPiece.canMove(grid, 1, 0)){
+                        do currentPiece.tryMove(grid, 1, 0);
+                        do maybeResetlockAfterAction();
+                    }
                 }
             }
             // left arrow => move piece left 1
@@ -354,9 +362,11 @@ class TetrisGame {
                 if (~(lrHold = -1)){
                     let lrHold = -1;
                     let dasCounter = 0;
-                    let arrCounter = 0;                
-                    do currentPiece.tryMove(grid, -1, 0);
-                    let lockCounter = 0;
+                    let arrCounter = 0;
+                    if (currentPiece.tryMove(grid, -1, 0)){
+                        do currentPiece.tryMove(grid, -1, 0);
+                        do maybeResetlockAfterAction();
+                    }                
                 }
             }
         } else {
@@ -364,20 +374,19 @@ class TetrisGame {
         }
 
         // if holding left/right, count DAS then ARR repeats
-        if (~(lrHold = 0)) {
-            let dasCounter = dasCounter + 1;
-            if (arrCounter > (arrFrames-1)) {
-                if (lrHold = 1){
-                    do currentPiece.tryMove(grid, 1, 0);
-                }
-                if (lrHold = -1){
-                    do currentPiece.tryMove(grid, -1, 0);
-                }
-                let arrCounter = 0;
-                let lockCounter = 0;
-            }
-        }
-
+        // if (~(lrHold = 0)) {
+        //     let dasCounter = dasCounter + 1;
+        //     if (arrCounter > (arrFrames-1)) {
+        //         if (lrHold = 1){
+        //             do currentPiece.tryMove(grid, 1, 0);
+        //         }
+        //         if (lrHold = -1){
+        //             do currentPiece.tryMove(grid, -1, 0);
+        //         }
+        //         let arrCounter = 0;
+        //         let lockCounter = 0;
+        //     }
+        // }
 
         // soft drop (held down)
         // down arrow => move piece down 1 (soft drop)
@@ -463,7 +472,9 @@ class TetrisGame {
 
         while (i < 12){
             let prevPieceCells[i] = src[i];
-            let i = i + 1;
+            let prevPieceCells[i+1] = src[i+1];
+            let prevPieceCells[i+2] = src[i+2];
+            let i = i + 3;
         }
 
         return;
@@ -494,6 +505,18 @@ class TetrisGame {
         var boolean ret;
         let ret = ((aR = bR) & (aC = bC)); 
         return ret;
+    }
+
+    method boolean isGrounded() {
+        return (~(currentPiece.canMove(grid, 0, 1)));
+    }
+
+    method void maybeResetlockAfterAction(){
+        if (~(isGrounded())) {
+            let onGround = false;
+            let lockCounter = 0;
+        }
+        return;
     }
 
     method void spawnNewPiece() {
