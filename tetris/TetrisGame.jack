@@ -128,7 +128,7 @@ class TetrisGame {
 
     method boolean play(){
         var Array piece_grid_coords;
-        var int timeDiff, i, j, found;
+        var int timeDiff, i, j, found, cleared;
         var boolean canMoveFlag2, arrFlag, canPlay;
 
         while (true){
@@ -155,7 +155,10 @@ class TetrisGame {
                 if (lockCounter > (lockDelayFrames-1)){
                     // stamp to board
                     do lockCurrentPiece();
+                    
                     // clear lines
+                    let cleared = grid.clearFullLines();
+                    do grid.draw();
 
                     // spawn next active piece
                     do spawnNewPiece();

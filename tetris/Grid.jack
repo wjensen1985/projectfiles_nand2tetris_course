@@ -211,6 +211,56 @@ class Grid {
         return;
     }
 
+    method boolean isRowFull(int row){
+        var int c, v;
+        let c = 1;
+        while (c < (cols + 1)){
+            let v = points_grid.get((row + hiddenRows), c);
+            if (v = 0){
+                return false;
+            }
+            let c = c + 1;
+        }
+        return true;
+    }
+
+    method void shiftDownFrom(int row){
+        var int dest, src, c, v;
+
+        let dest = hiddenRows + row;
+        while (dest > 1){
+            let src = dest - 1;
+            let c = 1;
+            while (c < (cols + 1)){
+                let v = points_grid.get(src, c);
+                do points_grid.set_point(dest, c, v);
+                let c = c + 1;
+            }
+            let  dest = dest - 1;
+        }
+
+        do points_grid.set_row(1, 0);
+        return;
+    }
+
+    method int clearFullLines(){
+        var int r, cleared;
+        var boolean isFull;
+
+        let cleared = 0;
+        let r = 1;
+        while (r < (rows + 1)){
+            let isFull = isRowFull(r);
+            if (isFull){
+                do shiftDownFrom(r);
+                let cleared = cleared + 1;
+            } else {
+                let r = r + 1;
+            }
+        }
+        return cleared;
+    }
+
     method int getRows(){
         return rows;
     }
