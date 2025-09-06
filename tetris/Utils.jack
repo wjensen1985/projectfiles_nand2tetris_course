@@ -1,7 +1,7 @@
 /** utility functions */
 class Utils {
 
-    method int Mod(int x, int y){
+    function int Mod(int x, int y){
         var int remainder;
 
         if (x = 0){

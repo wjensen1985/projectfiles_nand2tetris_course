@@ -3,7 +3,7 @@ class Main {
 
     function void main() {
         var TetrisGame game;
-        var int lastScore, initLevel;
+        var int lastScore, initLevel, seed;
         var boolean game_state, running;
 
         let running = true;
@@ -13,13 +13,13 @@ class Main {
         while (running){
             // show menu and wait for key press to start next game
             do showMenu(lastScore);
-            do waitForAnyKey();
+            let seed = waitForAnyKey();
 
             // clear menu screen before starting the game
             do Screen.clearScreen();
 
             // start a fresh game
-            let game = TetrisGame.new(0,0);
+            let game = TetrisGame.new(0,0,seed);
             do game.setup();
 
             // play the game
@@ -110,20 +110,29 @@ class Main {
         return n;
     }
 
-    method void waitForAnyKey(){
+    method int waitForAnyKey(){
+        var int ret, seed_count;
+        
         while (~((Keyboard.keyPressed()) = 0)) {
             do Sys.wait(1);
         }
         
         while ((Keyboard.keyPressed()) = 0) {
             do Sys.wait(1);
+            let seed_count = seed_count + 1;
+            if (seed_count > 30000){
+                let seed_count = 0;
+            }
         }
 
         while (~((Keyboard.keyPressed()) = 0)) {
             do Sys.wait(1);
         }
 
-        return;
+        let ret = Math.multiply(seed_count, 33);
+        let ret = (ret & 32767);
+
+        return ret;
     }
 
 }

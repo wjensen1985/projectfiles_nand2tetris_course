@@ -41,15 +41,6 @@ class Matrix{
         return ret;
     }
 
-    // method Array get_row(int row){
-    //     var Array ret;
-    //     var int row_idx;
-    //     let row_idx = row - 1;
-    //     let ret = a[row_idx];
-
-    //     return ret;
-    // }
-
     method void set_row(int r, int value){
         var Array tmp;
         var int i;
@@ -58,9 +49,8 @@ class Matrix{
 
         // check in bounds
         if ((row_idx > -1) & (row_idx < rows)) {
-            let i = 0;
             let tmp = a[row_idx];
-
+            let i = 0;
             while (i < cols) {
                 let tmp[i] = value;
                 let i = i + 1;
@@ -115,6 +105,18 @@ class Matrix{
     }
 
     method void dispose(){
+        var int r;
+        var Array rowRef;
+
+        let r = 0;
+        while (r < rows){
+            let rowRef = a[r];
+            do rowRef.dispose();
+            let r = r + 1;
+        }
+
+        do a.dispose();
+
         do Memory.deAlloc(this);
         return;
     }

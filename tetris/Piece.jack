@@ -132,11 +132,12 @@ class Piece {
             let bbRow = bbRow + 1;
         }
 
-        // zero pad in case issue:
+        // one pad in case issue:
         while (i < 12) {
-            let ret[i] = 0;
-            let ret[i+1] = 0;
-            let ret[i+2] = 0;
+            do Output.printString("calcGridCoords Error - alksdjf;lkajsdl;kfjl;aksdjfl;kjaslk;djf;lkjd");
+            let ret[i] = 1;
+            let ret[i+1] = 1;
+            let ret[i+2] = 1;
             let i = i + 3;
         }
 
@@ -251,7 +252,7 @@ class Piece {
                         return false;
                     }
 
-                    if (board.getPoint(y, x) = 1){
+                    if ( ((board.getPoint(y, x)) = 1) ){
                         // point already occupied
                         return false;
                     }
@@ -303,11 +304,11 @@ class Piece {
                 let dy = 0;
             }
             // back to all
-            if ( (i=5) & isIpiece | (i=3) & ~(isIpiece) ){
+            if ( ((i=5) & isIpiece) | ((i=3) & ~(isIpiece)) ){
                 let dx = 0;
                 let dy = 1;
             }
-            if ( (i=6) & isIpiece | (i=4) & ~(isIpiece) ){
+            if ( ((i=6) & isIpiece) | ((i=4) & ~(isIpiece)) ){
                 let dx = 0;
                 let dy = -1;
             }
@@ -368,11 +369,11 @@ class Piece {
                 let dy = 0;
             }
             // back to all
-            if ( (i=5) & isIpiece | (i=3) & ~(isIpiece) ){
+            if ( ((i=5) & isIpiece) | ((i=3) & ~(isIpiece)) ){
                 let dx = 0;
                 let dy = 1;
             }
-            if ( (i=6) & isIpiece | (i=4) & ~(isIpiece) ){
+            if ( ((i=6) & isIpiece) | ((i=4) & ~(isIpiece)) ){
                 let dx = 0;
                 let dy = -1;
             }
@@ -429,6 +430,7 @@ class Piece {
     }
 
     method void dispose(){
+        do boundingBox.dispose();
         do Memory.deAlloc(this);
         return;
     }

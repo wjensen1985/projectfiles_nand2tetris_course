@@ -73,8 +73,8 @@ class Grid {
 
         let x1 = horizontal_offset + ((c-1) * (box_size + space_size));
         let y1 = (r-1) * (box_size + space_size);
-        let x2 = x1 + (box_size);
-        let y2 = y1 + (box_size);
+        let x2 = x1 + box_size;
+        let y2 = y1 + box_size;
 
         do Screen.drawRectangle(x1, y1, x2, y2);
 
@@ -186,9 +186,11 @@ class Grid {
     method int getBoxSize(){
         return box_size;
     }
+
     method int getSpaceSize(){
         return space_size;
     }
+
     method int getHorizontalOffset(){
         return horizontal_offset;
     }
@@ -264,6 +266,7 @@ class Grid {
     method int getRows(){
         return rows;
     }
+
     method int getCols(){
         return cols;
     }
@@ -277,12 +280,13 @@ class Grid {
         let box_size = 10;
         let space_size = 2;
 
-        let horizontal_offset = (512 / 2) - (((box_size * cols) + (space_size * (cols - 1) ) ) / 2);
+        let horizontal_offset = (512 / 2) - ( ((box_size * cols) + (space_size * (cols - 1) ) ) / 2);
 
         return this;
     }
 
     method void dispose(){
+        do points_grid.dispose();
         do Memory.deAlloc(this);
         return;
     }

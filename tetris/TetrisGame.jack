@@ -36,7 +36,9 @@ class TetrisGame {
     field int nextLeveLineThreshold;
     field boolean gameOver;
 
-    constructor TetrisGame new(int initScore, int initLevel){
+    field PieceBag bag;
+
+    constructor TetrisGame new(int initScore, int initLevel, int seed){
         let score = initScore;
         let level = initLevel;
         let grid = Grid.new(20, 10);
@@ -67,8 +69,10 @@ class TetrisGame {
 
         let prevPieceCells = Array.new(12);
 
-        let currentPiece = Piece.new(3, 1, 4);
-        let nextType = 0;
+        let bag = PieceBag.new(seed);
+        let nextType = bag.next();
+        let currentPiece = Piece.new(nextType, 1, 4);
+        let nextType = bag.next();
 
         let lines = 0;
         let startLevel = initLevel;
@@ -100,53 +104,19 @@ class TetrisGame {
         return level;
     }
 
-    method void draw(int timeDiff){
-        var Array pieceGridPts;
-        var int i, lenPts;
-
-        // draw 'locked' points if Frame is > updateTicks past prevFrame
-        // let timeDiff = time - prevFrameTime;
-        // if (timeDiff > (updateTicks-2)){
-        //     do grid.draw();
-        // }
-
-        if (timeDiff = 0){
-            do grid.draw();        
-            // draw in the current Pieces 'active' points
-            let pieceGridPts = currentPiece.calcGridCoords();
-            // (r, c, val) for each block in piece (4blocks in every piece)
-            let lenPts = 12;
-
-            let i = 0;
-            while (i < lenPts){
-                if (pieceGridPts[i+2] = 1){
-                    // draw point in grid
-                    do grid.drawOverPoint(pieceGridPts[i], pieceGridPts[i+1], true);
-                } 
-                // else {
-                //     if( (grid.getPoint(pieceGridPts[i], pieceGridPts[i+1])) = 1){
-                //         do grid.drawOverPoint(pieceGridPts[i], pieceGridPts[i+1], true);
-                //     }
-                // }
-
-                let i = i + 3;
-            } 
-            do pieceGridPts.dispose();
-        }
-
-
-        
-        return;
-    }
-
     method boolean play(){
         var Array piece_grid_coords;
-        var int timeDiff, i, j, found, cleared;
-        var boolean canMoveFlag2, arrFlag, canPlay, rotHoldFlag;
-
+        var int timeDiff, i, j, found, cleared, frameCount;
+        var boolean canMoveFlag2, arrFlag, canPlay, rotHoldFlag, sameCellFlag;
+        
+        let frameCount = 0;
         while (~(gameOver)){
             // read & handle input
             do handleKeyPress();
+            if (gameOver){
+                do piece_grid_coords.dispose();
+                return false;
+            }
 
             // apply gravity
             let gravityCounter = gravityCounter + 1;
@@ -184,6 +154,7 @@ class TetrisGame {
                     do spawnNewPiece();
 
                     if (gameOver){
+                        do piece_grid_coords.dispose();
                         return false;
                     }
 
@@ -217,50 +188,49 @@ class TetrisGame {
             // erase old loop
             let i = 0;
             while (i < 12){
-                if (prevPieceCells[i+2] = 1){
-                    let found = 0;
-                    let j = 0;
-                    while (j < 12){
-                        if ( (piece_grid_coords[j+2] = 1) & (sameCell(prevPieceCells[i], prevPieceCells[i+1], piece_grid_coords[j], piece_grid_coords[j+1]) ) ){
-                            let found = 1;
-                            let j = 12;
-                        } else {
-                            let j = j + 3;
-                        }
+                let found = 0;
+                let j = 0;
+                let sameCellFlag = false;
+                while (j < 12){
+                    let sameCellFlag = sameCell(prevPieceCells[i], prevPieceCells[i+1], piece_grid_coords[j], piece_grid_coords[j+1]);
+                    if ( sameCellFlag ){
+                        let found = 1;
+                        let j = 12;
+                    } else {
+                    let j = j + 3;
                     }
-
-                    if (found = 0){
-                        do eraseCell(prevPieceCells[i], prevPieceCells[i+1]);
-                    }
-
                 }
+
+                if (found = 0){
+                    do eraseCell(prevPieceCells[i], prevPieceCells[i+1]);
+                }
+
                 let i = i + 3;
             }
 
             // draw new loop
             let i = 0;
             while (i < 12){
-                if (piece_grid_coords[i+2] = 1){
-                    let found = 0;
-                    let j = 0;
-                    while (j < 12){
-                        if ( (piece_grid_coords[j+2] = 1) & (sameCell(prevPieceCells[j], prevPieceCells[j+1], piece_grid_coords[i], piece_grid_coords[i+1]) ) ){
-                            let found = 1;
-                            let j = 12;
-                        } else {
-                            let j = j + 3;
-                        }
+                let found = 0;
+                let j = 0;
+                while (j < 12){
+                    let sameCellFlag = sameCell(prevPieceCells[j], prevPieceCells[j+1], piece_grid_coords[i], piece_grid_coords[i+1]);
+                    if ( sameCellFlag ){
+                        let found = 1;
+                        let j = 12;
+                    } else {
+                        let j = j + 3;
                     }
-
-                    if (found = 0){
-                        do drawCell(piece_grid_coords[i], piece_grid_coords[i+1]);
-                    }
-
                 }
+
+                if (found = 0){
+                    do drawCell(piece_grid_coords[i], piece_grid_coords[i+1]);
+                }
+
                 let i = i + 3;
             }
             
-            // update prevPieceCells = pieces_grid_coords (curent)
+            // update prevPieceCells = piece_grid_coords (curent)
             let i = 0;
             while (i < 12){
                 let prevPieceCells[i] = piece_grid_coords[i];
@@ -323,8 +293,10 @@ class TetrisGame {
                 let arrCounter = 0;
             }
 
+            let frameCount = frameCount + 1;
         }
 
+        do piece_grid_coords.dispose();
         return false;
     }
 
@@ -345,7 +317,7 @@ class TetrisGame {
             }
 
             // x or up arrow => rotateCW
-            if ((curKey = 131) | (curKey = 120)){
+            if ((curKey = 131) | (curKey = 120) | (curKey = 88)){
                 if ( ~((currentPiece.getType()) = 1) ){
                     if (currentPiece.tryRotateCW(grid)){
                         do maybeResetlockAfterAction();
@@ -355,12 +327,17 @@ class TetrisGame {
             }
 
             // z => rotateCCW
-            if ((curKey = 122)){
+            if ((curKey = 122) | (curKey = 90)){
                 if ( ~((currentPiece.getType()) = 1) ){
                     if (currentPiece.tryRotateCCW(grid)){
                         do maybeResetlockAfterAction();
                     }
                 }
+            }
+
+            // esc => quite to menu
+            if (curKey = 140){
+                let gameOver = true;
             }
 
         }
@@ -386,7 +363,7 @@ class TetrisGame {
                     let lrHold = -1;
                     let dasCounter = 0;
                     let arrCounter = 0;
-                    if (currentPiece.tryMove(grid, -1, 0)){
+                    if (currentPiece.canMove(grid, -1, 0)){
                         do currentPiece.tryMove(grid, -1, 0);
                         do maybeResetlockAfterAction();
                     }                
@@ -396,23 +373,6 @@ class TetrisGame {
             let lrHold = 0;
         }
 
-        // if holding left/right, count DAS then ARR repeats
-        // if (~(lrHold = 0)) {
-        //     let dasCounter = dasCounter + 1;
-        //     if (arrCounter > (arrFrames-1)) {
-        //         if (lrHold = 1){
-        //             do currentPiece.tryMove(grid, 1, 0);
-        //         }
-        //         if (lrHold = -1){
-        //             do currentPiece.tryMove(grid, -1, 0);
-        //         }
-        //         let arrCounter = 0;
-        //         let lockCounter = 0;
-        //     }
-        // }
-
-        // soft drop (held down)
-        // down arrow => move piece down 1 (soft drop)
         if (curKey = 133){
             let softDropCounter = softDropCounter + 1;
             if (softDropCounter > (softDropFrames -1)){
@@ -486,7 +446,30 @@ class TetrisGame {
             let i = i + 1;
         }
 
+        do draw_smile(250);
 
+        return;
+    }
+
+    method void draw_smile(int location) {
+        var int memAddress;
+        let memAddress = 16384 + location;
+        do Memory.poke(memAddress + 0, 0);
+        do Memory.poke(memAddress + 32, 0);
+        do Memory.poke(memAddress + 64, 0);
+        do Memory.poke(memAddress + 96, 1560);
+        do Memory.poke(memAddress + 128, 1560);
+        do Memory.poke(memAddress + 160, 0);
+        do Memory.poke(memAddress + 192, 0);
+        do Memory.poke(memAddress + 224, 16386);
+        do Memory.poke(memAddress + 256, 8198);
+        do Memory.poke(memAddress + 288, 12300);
+        do Memory.poke(memAddress + 320, 6264);
+        do Memory.poke(memAddress + 352, 16320);
+        do Memory.poke(memAddress + 384, 27392);
+        do Memory.poke(memAddress + 416, 20992);
+        do Memory.poke(memAddress + 448, 19456);
+        do Memory.poke(memAddress + 480, 28672);
         return;
     }
 
@@ -507,12 +490,18 @@ class TetrisGame {
     method void eraseCell(int r, int c) {
         var int v;
         // draw background color just for this cell
+        if ((c < 1) | (c > grid.getCols()) | (r < 1) | (r > grid.getRows())) {
+            return;
+        }
         let v = grid.getPoint(r, c);
         do grid.drawOverPoint(r, c, (v=1));
         return;
     }
 
     method void drawCell(int r, int c) {
+        if ((c < 1) | (c > grid.getCols()) | (r < 1) | (r > grid.getRows())) {
+            return;
+        }
         do grid.drawOverPoint(r, c, true);
         return;
     }
@@ -545,14 +534,17 @@ class TetrisGame {
 
     method void spawnNewPiece() {
         var int t, spawnRow, spawnCol;
+        // var Array tmp;
         
         // choose next piece type
         let t = nextType;
-        if (nextType = 6){
-            let nextType = 0;
-        } else {
-            let nextType = nextType + 1;
-        }
+        // if (nextType = 6){
+        //     let nextType = 0;
+        // } else {
+        //     let nextType = nextType + 1;
+        // }
+
+
 
         // spawn coords - center-ish
         let spawnRow = 1;
@@ -560,6 +552,8 @@ class TetrisGame {
 
         do currentPiece.dispose();
         let currentPiece = Piece.new(t, spawnRow, spawnCol);
+
+        let nextType = bag.next();
 
         if (~(currentPiece.canMove(grid, 0, 0))) {
             // game over
@@ -573,6 +567,13 @@ class TetrisGame {
         let lrHold = 0;
         let dasCounter = 0;
         let arrCounter = 0;
+
+        // re-seed prevPieceCells
+        // let tmp = currentPiece.calcGridCoords();
+        // do seedPrevPieceCells(tmp);
+        // do tmp.dispose();
+
+        // let firstFrame = true;
 
         return;
     }
@@ -676,6 +677,7 @@ class TetrisGame {
         do prevPieceCells.dispose();
         do grid.dispose();
         do currentPiece.dispose();
+        do bag.dispose();
         do Memory.deAlloc(this);
         return;
     }
