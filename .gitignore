@@ -1,5 +1,7 @@
 # VMTranslator executable made w/MakeFile
 VMTranslator
+*/test_files*
+*.*:ZoneIdentifier
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
