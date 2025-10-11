@@ -8,7 +8,7 @@ class Tokenizer:
         # opens the jack file stream and gets ready to tokenize it
         self.file = input_stream
         self.tokens = []
-        self.curToken = 0
+        self.curTokenIdx = 0
 
         self.symbols = {
             "{", "}", "(", ")", "[", "]", ".", ",", ";",
@@ -25,11 +25,26 @@ class Tokenizer:
         self.clean_text = self.read_and_clean()
         self.tokens = self.text_to_jack_tkns(self.clean_text)
 
-        print(self.tokens)
-        # for t in self.tokens:
-        #     print(t)
+        # print(self.tokens)
+        # for t, type in self.tokens:
+        #     print(f'token: {t}, type: {type}')
 
         return
+
+    """
+    helper to determine token type
+    """
+    def ttype(self, token):
+        if token in self.keywords:
+            return "keyword"
+        elif token in self.symbols:
+            return "symbol"
+        elif token.isdigit():
+            return "integerConstant"
+        elif token.startswith('"') and token.endswith('"'):
+            return "stringConstant"
+        else:
+            return "identifier"
 
     """
     takes in string of a file line and outputs list of strings that are jack tokens
@@ -44,27 +59,24 @@ class Tokenizer:
 
             if c == " " and not isInStringFlag:
                 if curString:
-                    ret.append(curString)
+                    ret.append([curString, self.ttype(curString)])
                 curString = ""
-
-                # *** check keyword for type later
-
                 continue
             if c in self.symbols and not isInStringFlag:
                 if curString:
-                    ret.append(curString)
-                ret.append(c)
+                    ret.append([curString, self.ttype(curString)])
+                ret.append([c, self.ttype(c)])
                 curString = ""
                 continue
             if c == '"':
                 if isInStringFlag:
                     # end of current jack string
-                    ret.append(curString)
+                    ret.append([curString, self.ttype('"' + curString + '"')])
                     curString = ""
                     isInStringFlag = not isInStringFlag
                 else:
                     if curString:
-                        ret.append(curString)
+                        ret.append([curString, self.ttype(curString)])
                     isInStringFlag = not isInStringFlag
                 continue
             
@@ -92,10 +104,10 @@ class Tokenizer:
         return data
     
     """
-    function returning boolean of whether or not the tokenizer has more tokens or not
+    returns whether or not there are more tokens left to process from input
     """
     def hasMoreTokens(self):
-        return True if self.curToken < len(self.tokens) else False
+        return True if self.curTokenIdx < len(self.tokens) else False
 
 
     """
@@ -103,20 +115,20 @@ class Tokenizer:
     """
     def advance(self):
         # advance token index
-        self.curToken += 1
-        # update has more tokens
+        self.curTokenIdx += 1
         return
 
     """
-    returns whether or not there are more tokens left to process from input
+    returns current token type
     """
-    def hasMoreTokens(self):
-
-        return
-
-    def curTokenType(self):
-
-        return
+    def getCurTokenType(self):
+        return self.tokens[self.curTokenIdx][1]
+    
+    """
+    returns current token value
+    """
+    def getCurTokenValue(self):
+        return self.tokens[self.curTokenIdx][0]
     
     """
     call only if the current token type is KEYWORD
@@ -328,8 +340,11 @@ class CompilationEngine:
 class JackAnalyzer():
     def __init__(self, inputPaths):
         self.filesList = inputPaths
+        self.specialOutput = {'<': '&lt;', '>': '&gt;', '"': '&quot;', '&': '&amp;'}
 
-        if len(inputPaths) > 1:
+
+    def analyze(self):
+        if len(self.filesList) > 1:
             # folder mode
             print(f'\nTranslating all files: {self.filesList}\n')
 
@@ -340,15 +355,34 @@ class JackAnalyzer():
 
         else:
             # single file
-            print(f'\nTranslating single file: {self.filesList}\n')
+
+            print(f'\nTranslating single file: {self.filesList[0]}\n')
             tokenizer = Tokenizer(self.filesList[0])
 
+            baseName, _ = os.path.splitext(self.filesList[0])
+            print(baseName)
+            outputFileName = baseName + "_test" + ".xml"
+
+
+
+            with open(outputFileName, "w") as f:
+                line = f'<tokens>\n'
+                f.write(line)
+                while tokenizer.hasMoreTokens():
+                    token = tokenizer.getCurTokenValue()
+                    tokenType = tokenizer.getCurTokenType()
+                    line = f'<{tokenType}> {self.specialOutput[token] if token in self.specialOutput else token} </{tokenType}>\n'
+                    f.write(line)
+                    tokenizer.advance()
+                line = f'</tokens>\n'
+                f.write(line)
 
 
 def main(files):
     print("\nrunning main")
 
     analyzer = JackAnalyzer(files)
+    analyzer.analyze()
 
 
     return
