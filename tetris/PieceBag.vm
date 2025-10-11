@@ -1,0 +1,227 @@
+function PieceBag.rand 0
+    push argument 0
+    pop pointer 0
+    push this 2
+    push constant 25173
+    call Math.multiply 2
+    push constant 13849
+    add
+    pop this 2
+    push this 2
+    push constant 32767
+    and
+    pop this 2
+    push this 2
+    return
+function PieceBag.randRange 3
+    push argument 0
+    pop pointer 0
+    push argument 1
+    push constant 1
+    lt
+    not
+    if-goto PieceBag_1
+    push constant 0
+    return
+    goto PieceBag_0
+label PieceBag_1
+label PieceBag_0
+    push pointer 0
+    call PieceBag.rand 1
+    pop local 2
+    push local 2
+    push argument 1
+    call Math.divide 2
+    pop local 0
+    push local 2
+    push local 0
+    push argument 1
+    call Math.multiply 2
+    sub
+    pop local 1
+    push local 1
+    return
+function PieceBag.refillAndShuffle 3
+    push argument 0
+    pop pointer 0
+    push constant 0
+    push this 0
+    add
+    push constant 0
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push constant 1
+    push this 0
+    add
+    push constant 1
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push constant 2
+    push this 0
+    add
+    push constant 2
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push constant 3
+    push this 0
+    add
+    push constant 3
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push constant 4
+    push this 0
+    add
+    push constant 4
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push constant 5
+    push this 0
+    add
+    push constant 5
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push constant 6
+    push this 0
+    add
+    push constant 6
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push constant 6
+    pop local 0
+label PieceBag_2
+    push local 0
+    push constant 1
+    neg
+    gt
+    not
+    if-goto PieceBag_3
+    push pointer 0
+    push local 0
+    push constant 1
+    add
+    call PieceBag.randRange 2
+    pop local 1
+    push local 0
+    push this 0
+    add
+    pop pointer 1
+    push that 0
+    pop local 2
+    push local 0
+    push this 0
+    add
+    push local 1
+    push this 0
+    add
+    pop pointer 1
+    push that 0
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push local 1
+    push this 0
+    add
+    push local 2
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push local 0
+    push constant 1
+    sub
+    pop local 0
+    goto PieceBag_2
+label PieceBag_3
+    push constant 0
+    pop this 1
+    push constant 0
+    return
+function PieceBag.reseed 2
+    push argument 0
+    pop pointer 0
+    call Keyboard.keyPressed 0
+    pop local 0
+    push argument 1
+    pop local 1
+    push this 2
+    push local 0
+    add
+    push local 1
+    add
+    pop this 2
+    push this 2
+    push constant 32767
+    and
+    pop this 2
+    push constant 0
+    return
+function PieceBag.next 1
+    push argument 0
+    pop pointer 0
+    push this 1
+    push constant 7
+    eq
+    not
+    if-goto PieceBag_5
+    push pointer 0
+    call PieceBag.refillAndShuffle 1
+    pop temp 0
+    goto PieceBag_4
+label PieceBag_5
+label PieceBag_4
+    push this 1
+    push this 0
+    add
+    pop pointer 1
+    push that 0
+    pop local 0
+    push this 1
+    push constant 1
+    add
+    pop this 1
+    push local 0
+    return
+function PieceBag.new 0
+    push constant 3
+    call Memory.alloc 1
+    pop pointer 0
+    push constant 7
+    call Array.new 1
+    pop this 0
+    push constant 12345
+    pop this 2
+    push pointer 0
+    push argument 0
+    call PieceBag.reseed 2
+    pop temp 0
+    push pointer 0
+    call PieceBag.refillAndShuffle 1
+    pop temp 0
+    push pointer 0
+    return
+function PieceBag.dispose 0
+    push argument 0
+    pop pointer 0
+    push this 0
+    call Array.dispose 1
+    pop temp 0
+    push pointer 0
+    call Memory.deAlloc 1
+    pop temp 0
+    push constant 0
+    return

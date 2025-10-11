@@ -1,0 +1,28 @@
+function Utils.Mod 1
+    push argument 0
+    push constant 0
+    eq
+    not
+    if-goto Utils_1
+    push constant 0
+    return
+    goto Utils_0
+label Utils_1
+label Utils_0
+    push argument 0
+    pop local 0
+label Utils_2
+    push local 0
+    push argument 1
+    lt
+    not
+    not
+    if-goto Utils_3
+    push local 0
+    push argument 1
+    sub
+    pop local 0
+    goto Utils_2
+label Utils_3
+    push local 0
+    return

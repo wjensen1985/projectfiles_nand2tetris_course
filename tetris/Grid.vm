@@ -1,0 +1,723 @@
+function Grid.draw 7
+    push argument 0
+    pop pointer 0
+    push constant 1
+    pop local 4
+label Grid_0
+    push local 4
+    push this 0
+    push constant 1
+    add
+    lt
+    not
+    if-goto Grid_1
+    push constant 1
+    pop local 5
+label Grid_2
+    push local 5
+    push this 1
+    push constant 1
+    add
+    lt
+    not
+    if-goto Grid_3
+    push this 3
+    push local 4
+    push this 2
+    add
+    push local 5
+    call Matrix.get 3
+    pop local 6
+    push local 6
+    push constant 0
+    eq
+    not
+    if-goto Grid_5
+    push constant 0
+    call Screen.setColor 1
+    pop temp 0
+    goto Grid_4
+label Grid_5
+    push constant 1
+    neg
+    call Screen.setColor 1
+    pop temp 0
+label Grid_4
+    push this 6
+    push local 5
+    push constant 1
+    sub
+    push this 4
+    push this 5
+    add
+    call Math.multiply 2
+    add
+    pop local 0
+    push local 4
+    push constant 1
+    sub
+    push this 4
+    push this 5
+    add
+    call Math.multiply 2
+    pop local 2
+    push local 0
+    push this 4
+    add
+    pop local 1
+    push local 2
+    push this 4
+    add
+    pop local 3
+    push local 0
+    push local 2
+    push local 1
+    push local 3
+    call Screen.drawRectangle 4
+    pop temp 0
+    push local 5
+    push constant 1
+    add
+    pop local 5
+    goto Grid_2
+label Grid_3
+    push local 4
+    push constant 1
+    add
+    pop local 4
+    goto Grid_0
+label Grid_1
+    push constant 0
+    return
+function Grid.drawOverPoint 4
+    push argument 0
+    pop pointer 0
+    push argument 3
+    call Screen.setColor 1
+    pop temp 0
+    push this 6
+    push argument 2
+    push constant 1
+    sub
+    push this 4
+    push this 5
+    add
+    call Math.multiply 2
+    add
+    pop local 0
+    push argument 1
+    push constant 1
+    sub
+    push this 4
+    push this 5
+    add
+    call Math.multiply 2
+    pop local 2
+    push local 0
+    push this 4
+    add
+    pop local 1
+    push local 2
+    push this 4
+    add
+    pop local 3
+    push local 0
+    push local 2
+    push local 1
+    push local 3
+    call Screen.drawRectangle 4
+    pop temp 0
+    push constant 0
+    return
+function Grid.clearRow 0
+    push argument 0
+    pop pointer 0
+    push this 3
+    push argument 1
+    push this 2
+    add
+    push constant 0
+    call Matrix.set_row 3
+    pop temp 0
+    push constant 0
+    return
+function Grid.fillRow 0
+    push argument 0
+    pop pointer 0
+    push this 3
+    push argument 1
+    push this 2
+    add
+    push constant 1
+    call Matrix.set_row 3
+    pop temp 0
+    push constant 0
+    return
+function Grid.testingBB_border 0
+    push argument 0
+    pop pointer 0
+    push argument 1
+    push constant 2
+    add
+    pop argument 1
+    push this 3
+    push argument 1
+    push constant 1
+    sub
+    push argument 2
+    push constant 1
+    sub
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 3
+    push argument 1
+    push constant 1
+    sub
+    push argument 2
+    push constant 0
+    add
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 3
+    push argument 1
+    push constant 1
+    sub
+    push argument 2
+    push constant 1
+    add
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 3
+    push argument 1
+    push constant 1
+    sub
+    push argument 2
+    push constant 2
+    add
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 3
+    push argument 1
+    push constant 1
+    sub
+    push argument 2
+    push constant 3
+    add
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push argument 3
+    push constant 4
+    eq
+    not
+    if-goto Grid_7
+    push this 3
+    push argument 1
+    push constant 1
+    sub
+    push argument 2
+    push constant 4
+    add
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 3
+    push argument 1
+    push argument 3
+    add
+    push argument 2
+    push constant 4
+    add
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 3
+    push argument 1
+    push constant 3
+    add
+    push argument 2
+    push constant 1
+    sub
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 3
+    push argument 1
+    push constant 3
+    add
+    push argument 2
+    push argument 3
+    add
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    goto Grid_6
+label Grid_7
+label Grid_6
+    push this 3
+    push argument 1
+    push argument 3
+    add
+    push argument 2
+    push constant 1
+    sub
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 3
+    push argument 1
+    push argument 3
+    add
+    push argument 2
+    push constant 0
+    add
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 3
+    push argument 1
+    push argument 3
+    add
+    push argument 2
+    push constant 1
+    add
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 3
+    push argument 1
+    push argument 3
+    add
+    push argument 2
+    push constant 2
+    add
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 3
+    push argument 1
+    push argument 3
+    add
+    push argument 2
+    push constant 3
+    add
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 3
+    push argument 1
+    push argument 2
+    push constant 1
+    sub
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 3
+    push argument 1
+    push constant 1
+    add
+    push argument 2
+    push constant 1
+    sub
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 3
+    push argument 1
+    push constant 2
+    add
+    push argument 2
+    push constant 1
+    sub
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 3
+    push argument 1
+    push argument 2
+    push argument 3
+    add
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 3
+    push argument 1
+    push constant 1
+    add
+    push argument 2
+    push argument 3
+    add
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 3
+    push argument 1
+    push constant 2
+    add
+    push argument 2
+    push argument 3
+    add
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push constant 0
+    return
+function Grid.clearGrid 0
+    push argument 0
+    pop pointer 0
+    push this 3
+    push constant 0
+    call Matrix.set_all 2
+    pop temp 0
+    push constant 0
+    return
+function Grid.fillGrid 0
+    push argument 0
+    pop pointer 0
+    push this 3
+    push constant 1
+    call Matrix.set_all 2
+    pop temp 0
+    push constant 0
+    return
+function Grid.placePointsList 5
+    push argument 0
+    pop pointer 0
+    push constant 0
+    pop local 0
+    push constant 0
+    pop local 1
+label Grid_8
+    push local 1
+    push argument 2
+    lt
+    not
+    if-goto Grid_9
+    push local 0
+    push argument 1
+    add
+    pop pointer 1
+    push that 0
+    pop local 2
+    push local 0
+    push constant 1
+    add
+    push argument 1
+    add
+    pop pointer 1
+    push that 0
+    pop local 3
+    push local 0
+    push constant 2
+    add
+    push argument 1
+    add
+    pop pointer 1
+    push that 0
+    pop local 4
+    push this 3
+    push local 2
+    push local 3
+    push local 4
+    call Matrix.set_point 4
+    pop temp 0
+    push local 1
+    push constant 1
+    add
+    pop local 1
+    push local 0
+    push constant 3
+    add
+    pop local 0
+    goto Grid_8
+label Grid_9
+    push constant 0
+    return
+function Grid.getPoint 0
+    push argument 0
+    pop pointer 0
+    push this 3
+    push argument 1
+    push this 2
+    add
+    push argument 2
+    call Matrix.get 3
+    return
+function Grid.getBoxSize 0
+    push argument 0
+    pop pointer 0
+    push this 4
+    return
+function Grid.getSpaceSize 0
+    push argument 0
+    pop pointer 0
+    push this 5
+    return
+function Grid.getHorizontalOffset 0
+    push argument 0
+    pop pointer 0
+    push this 6
+    return
+function Grid.setVisiblePoint 0
+    push argument 0
+    pop pointer 0
+    push this 3
+    push argument 1
+    push this 2
+    add
+    push argument 2
+    push argument 3
+    call Matrix.set_point 4
+    pop temp 0
+    push constant 0
+    return
+function Grid.stampCells 1
+    push argument 0
+    pop pointer 0
+    push constant 0
+    pop local 0
+label Grid_10
+    push local 0
+    push constant 12
+    lt
+    not
+    if-goto Grid_11
+    push local 0
+    push constant 2
+    add
+    push argument 1
+    add
+    pop pointer 1
+    push that 0
+    push constant 1
+    eq
+    not
+    if-goto Grid_13
+    push pointer 0
+    push local 0
+    push argument 1
+    add
+    pop pointer 1
+    push that 0
+    push local 0
+    push constant 1
+    add
+    push argument 1
+    add
+    pop pointer 1
+    push that 0
+    push constant 1
+    call Grid.setVisiblePoint 4
+    pop temp 0
+    goto Grid_12
+label Grid_13
+label Grid_12
+    push local 0
+    push constant 3
+    add
+    pop local 0
+    goto Grid_10
+label Grid_11
+    push constant 0
+    return
+function Grid.isRowFull 2
+    push argument 0
+    pop pointer 0
+    push constant 1
+    pop local 0
+label Grid_14
+    push local 0
+    push this 1
+    push constant 1
+    add
+    lt
+    not
+    if-goto Grid_15
+    push this 3
+    push argument 1
+    push this 2
+    add
+    push local 0
+    call Matrix.get 3
+    pop local 1
+    push local 1
+    push constant 0
+    eq
+    not
+    if-goto Grid_17
+    push constant 0
+    return
+    goto Grid_16
+label Grid_17
+label Grid_16
+    push local 0
+    push constant 1
+    add
+    pop local 0
+    goto Grid_14
+label Grid_15
+    push constant 1
+    neg
+    return
+function Grid.shiftDownFrom 4
+    push argument 0
+    pop pointer 0
+    push this 2
+    push argument 1
+    add
+    pop local 0
+label Grid_18
+    push local 0
+    push constant 1
+    gt
+    not
+    if-goto Grid_19
+    push local 0
+    push constant 1
+    sub
+    pop local 1
+    push constant 1
+    pop local 2
+label Grid_20
+    push local 2
+    push this 1
+    push constant 1
+    add
+    lt
+    not
+    if-goto Grid_21
+    push this 3
+    push local 1
+    push local 2
+    call Matrix.get 3
+    pop local 3
+    push this 3
+    push local 0
+    push local 2
+    push local 3
+    call Matrix.set_point 4
+    pop temp 0
+    push local 2
+    push constant 1
+    add
+    pop local 2
+    goto Grid_20
+label Grid_21
+    push local 0
+    push constant 1
+    sub
+    pop local 0
+    goto Grid_18
+label Grid_19
+    push this 3
+    push constant 1
+    push constant 0
+    call Matrix.set_row 3
+    pop temp 0
+    push constant 0
+    return
+function Grid.clearFullLines 3
+    push argument 0
+    pop pointer 0
+    push constant 0
+    pop local 1
+    push constant 1
+    pop local 0
+label Grid_22
+    push local 0
+    push this 0
+    push constant 1
+    add
+    lt
+    not
+    if-goto Grid_23
+    push pointer 0
+    push local 0
+    call Grid.isRowFull 2
+    pop local 2
+    push local 2
+    not
+    if-goto Grid_25
+    push pointer 0
+    push local 0
+    call Grid.shiftDownFrom 2
+    pop temp 0
+    push local 1
+    push constant 1
+    add
+    pop local 1
+    goto Grid_24
+label Grid_25
+    push local 0
+    push constant 1
+    add
+    pop local 0
+label Grid_24
+    goto Grid_22
+label Grid_23
+    push local 1
+    return
+function Grid.getRows 0
+    push argument 0
+    pop pointer 0
+    push this 0
+    return
+function Grid.getCols 0
+    push argument 0
+    pop pointer 0
+    push this 1
+    return
+function Grid.new 0
+    push constant 7
+    call Memory.alloc 1
+    pop pointer 0
+    push argument 0
+    pop this 0
+    push argument 1
+    pop this 1
+    push constant 2
+    pop this 2
+    push this 0
+    push this 2
+    add
+    push this 1
+    push constant 0
+    call Matrix.new 3
+    pop this 3
+    push constant 10
+    pop this 4
+    push constant 2
+    pop this 5
+    push constant 512
+    push constant 2
+    call Math.divide 2
+    push this 4
+    push this 1
+    call Math.multiply 2
+    push this 5
+    push this 1
+    push constant 1
+    sub
+    call Math.multiply 2
+    add
+    push constant 2
+    call Math.divide 2
+    sub
+    pop this 6
+    push pointer 0
+    return
+function Grid.dispose 0
+    push argument 0
+    pop pointer 0
+    push this 3
+    call Matrix.dispose 1
+    pop temp 0
+    push pointer 0
+    call Memory.deAlloc 1
+    pop temp 0
+    push constant 0
+    return

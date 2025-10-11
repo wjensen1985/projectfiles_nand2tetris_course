@@ -1,0 +1,1318 @@
+function Piece.new 0
+    push constant 6
+    call Memory.alloc 1
+    pop pointer 0
+    push argument 0
+    pop this 0
+    push argument 1
+    pop this 1
+    push argument 2
+    pop this 2
+    push constant 0
+    pop this 3
+    push argument 0
+    push constant 0
+    eq
+    not
+    if-goto Piece_1
+    push constant 4
+    push constant 4
+    push constant 0
+    call Matrix.new 3
+    pop this 4
+    push constant 4
+    pop this 5
+    push this 4
+    push constant 2
+    push constant 1
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 2
+    push constant 2
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 2
+    push constant 3
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 2
+    push constant 4
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    goto Piece_0
+label Piece_1
+label Piece_0
+    push argument 0
+    push constant 1
+    eq
+    not
+    if-goto Piece_3
+    push constant 4
+    push constant 4
+    push constant 0
+    call Matrix.new 3
+    pop this 4
+    push constant 4
+    pop this 5
+    push this 4
+    push constant 1
+    push constant 2
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 1
+    push constant 3
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 2
+    push constant 2
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 2
+    push constant 3
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    goto Piece_2
+label Piece_3
+label Piece_2
+    push argument 0
+    push constant 2
+    eq
+    not
+    if-goto Piece_5
+    push constant 3
+    push constant 3
+    push constant 0
+    call Matrix.new 3
+    pop this 4
+    push constant 3
+    pop this 5
+    push this 4
+    push constant 1
+    push constant 1
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 1
+    push constant 2
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 2
+    push constant 2
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 2
+    push constant 3
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    goto Piece_4
+label Piece_5
+label Piece_4
+    push argument 0
+    push constant 3
+    eq
+    not
+    if-goto Piece_7
+    push constant 3
+    push constant 3
+    push constant 0
+    call Matrix.new 3
+    pop this 4
+    push constant 3
+    pop this 5
+    push this 4
+    push constant 2
+    push constant 1
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 2
+    push constant 2
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 1
+    push constant 2
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 1
+    push constant 3
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    goto Piece_6
+label Piece_7
+label Piece_6
+    push argument 0
+    push constant 4
+    eq
+    not
+    if-goto Piece_9
+    push constant 3
+    push constant 3
+    push constant 0
+    call Matrix.new 3
+    pop this 4
+    push constant 3
+    pop this 5
+    push this 4
+    push constant 2
+    push constant 1
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 2
+    push constant 2
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 2
+    push constant 3
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 1
+    push constant 2
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    goto Piece_8
+label Piece_9
+label Piece_8
+    push argument 0
+    push constant 5
+    eq
+    not
+    if-goto Piece_11
+    push constant 3
+    push constant 3
+    push constant 0
+    call Matrix.new 3
+    pop this 4
+    push constant 3
+    pop this 5
+    push this 4
+    push constant 1
+    push constant 1
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 2
+    push constant 1
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 2
+    push constant 2
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 2
+    push constant 3
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    goto Piece_10
+label Piece_11
+label Piece_10
+    push argument 0
+    push constant 6
+    eq
+    not
+    if-goto Piece_13
+    push constant 3
+    push constant 3
+    push constant 0
+    call Matrix.new 3
+    pop this 4
+    push constant 3
+    pop this 5
+    push this 4
+    push constant 2
+    push constant 1
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 2
+    push constant 2
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 2
+    push constant 3
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    push this 4
+    push constant 1
+    push constant 3
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    goto Piece_12
+label Piece_13
+label Piece_12
+    push pointer 0
+    return
+function Piece.get_bb_size 0
+    push argument 0
+    pop pointer 0
+    push this 5
+    return
+function Piece.calcGridCoords 5
+    push argument 0
+    pop pointer 0
+    push constant 0
+    pop local 1
+    push constant 12
+    call Array.new 1
+    pop local 0
+    push constant 1
+    pop local 2
+label Piece_14
+    push local 2
+    push this 5
+    push constant 1
+    add
+    lt
+    not
+    if-goto Piece_15
+    push constant 1
+    pop local 3
+label Piece_16
+    push local 3
+    push this 5
+    push constant 1
+    add
+    lt
+    not
+    if-goto Piece_17
+    push this 4
+    push local 2
+    push local 3
+    call Matrix.get 3
+    pop local 4
+    push local 4
+    push constant 1
+    eq
+    not
+    if-goto Piece_19
+    push local 1
+    push local 0
+    add
+    push this 1
+    push local 2
+    add
+    push constant 1
+    sub
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push local 1
+    push constant 1
+    add
+    push local 0
+    add
+    push this 2
+    push local 3
+    add
+    push constant 1
+    sub
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push local 1
+    push constant 2
+    add
+    push local 0
+    add
+    push local 4
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push local 1
+    push constant 3
+    add
+    pop local 1
+    goto Piece_18
+label Piece_19
+label Piece_18
+    push local 3
+    push constant 1
+    add
+    pop local 3
+    goto Piece_16
+label Piece_17
+    push local 2
+    push constant 1
+    add
+    pop local 2
+    goto Piece_14
+label Piece_15
+label Piece_20
+    push local 1
+    push constant 12
+    lt
+    not
+    if-goto Piece_21
+    push constant 67
+    call String.new 1
+    push constant 99
+    call String.appendChar 2
+    push constant 97
+    call String.appendChar 2
+    push constant 108
+    call String.appendChar 2
+    push constant 99
+    call String.appendChar 2
+    push constant 71
+    call String.appendChar 2
+    push constant 114
+    call String.appendChar 2
+    push constant 105
+    call String.appendChar 2
+    push constant 100
+    call String.appendChar 2
+    push constant 67
+    call String.appendChar 2
+    push constant 111
+    call String.appendChar 2
+    push constant 111
+    call String.appendChar 2
+    push constant 114
+    call String.appendChar 2
+    push constant 100
+    call String.appendChar 2
+    push constant 115
+    call String.appendChar 2
+    push constant 32
+    call String.appendChar 2
+    push constant 69
+    call String.appendChar 2
+    push constant 114
+    call String.appendChar 2
+    push constant 114
+    call String.appendChar 2
+    push constant 111
+    call String.appendChar 2
+    push constant 114
+    call String.appendChar 2
+    push constant 32
+    call String.appendChar 2
+    push constant 45
+    call String.appendChar 2
+    push constant 32
+    call String.appendChar 2
+    push constant 97
+    call String.appendChar 2
+    push constant 108
+    call String.appendChar 2
+    push constant 107
+    call String.appendChar 2
+    push constant 115
+    call String.appendChar 2
+    push constant 100
+    call String.appendChar 2
+    push constant 106
+    call String.appendChar 2
+    push constant 102
+    call String.appendChar 2
+    push constant 59
+    call String.appendChar 2
+    push constant 108
+    call String.appendChar 2
+    push constant 107
+    call String.appendChar 2
+    push constant 97
+    call String.appendChar 2
+    push constant 106
+    call String.appendChar 2
+    push constant 115
+    call String.appendChar 2
+    push constant 100
+    call String.appendChar 2
+    push constant 108
+    call String.appendChar 2
+    push constant 59
+    call String.appendChar 2
+    push constant 107
+    call String.appendChar 2
+    push constant 102
+    call String.appendChar 2
+    push constant 106
+    call String.appendChar 2
+    push constant 108
+    call String.appendChar 2
+    push constant 59
+    call String.appendChar 2
+    push constant 97
+    call String.appendChar 2
+    push constant 107
+    call String.appendChar 2
+    push constant 115
+    call String.appendChar 2
+    push constant 100
+    call String.appendChar 2
+    push constant 106
+    call String.appendChar 2
+    push constant 102
+    call String.appendChar 2
+    push constant 108
+    call String.appendChar 2
+    push constant 59
+    call String.appendChar 2
+    push constant 107
+    call String.appendChar 2
+    push constant 106
+    call String.appendChar 2
+    push constant 97
+    call String.appendChar 2
+    push constant 115
+    call String.appendChar 2
+    push constant 108
+    call String.appendChar 2
+    push constant 107
+    call String.appendChar 2
+    push constant 59
+    call String.appendChar 2
+    push constant 100
+    call String.appendChar 2
+    push constant 106
+    call String.appendChar 2
+    push constant 102
+    call String.appendChar 2
+    push constant 59
+    call String.appendChar 2
+    push constant 108
+    call String.appendChar 2
+    push constant 107
+    call String.appendChar 2
+    push constant 106
+    call String.appendChar 2
+    push constant 100
+    call String.appendChar 2
+    call Output.printString 1
+    pop temp 0
+    push local 1
+    push local 0
+    add
+    push constant 1
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push local 1
+    push constant 1
+    add
+    push local 0
+    add
+    push constant 1
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push local 1
+    push constant 2
+    add
+    push local 0
+    add
+    push constant 1
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push local 1
+    push constant 3
+    add
+    pop local 1
+    goto Piece_20
+label Piece_21
+    push local 0
+    return
+function Piece.getRow 0
+    push argument 0
+    pop pointer 0
+    push this 1
+    return
+function Piece.getCol 0
+    push argument 0
+    pop pointer 0
+    push this 2
+    return
+function Piece.getType 0
+    push argument 0
+    pop pointer 0
+    push this 0
+    return
+function Piece.setRow 0
+    push argument 0
+    pop pointer 0
+    push argument 1
+    pop this 1
+    push constant 0
+    return
+function Piece.setCol 0
+    push argument 0
+    pop pointer 0
+    push argument 1
+    pop this 2
+    push constant 0
+    return
+function Piece.tryMove 1
+    push argument 0
+    pop pointer 0
+    push pointer 0
+    push argument 1
+    push argument 2
+    push argument 3
+    call Piece.canMove 4
+    pop local 0
+    push local 0
+    not
+    if-goto Piece_23
+    push this 1
+    push argument 3
+    add
+    pop this 1
+    push this 2
+    push argument 2
+    add
+    pop this 2
+    goto Piece_22
+label Piece_23
+label Piece_22
+    push constant 0
+    return
+function Piece.canMove 1
+    push argument 0
+    pop pointer 0
+    push pointer 0
+    push argument 1
+    push this 4
+    push this 1
+    push this 2
+    push argument 3
+    push argument 2
+    call Piece.canPlaceWith 7
+    pop local 0
+    push local 0
+    return
+function Piece.rotateCW 4
+    push argument 0
+    pop pointer 0
+    push argument 2
+    push argument 2
+    push constant 0
+    call Matrix.new 3
+    pop local 0
+    push constant 1
+    pop local 1
+label Piece_24
+    push local 1
+    push argument 2
+    push constant 1
+    add
+    lt
+    not
+    if-goto Piece_25
+    push constant 1
+    pop local 2
+label Piece_26
+    push local 2
+    push argument 2
+    push constant 1
+    add
+    lt
+    not
+    if-goto Piece_27
+    push argument 1
+    push argument 2
+    push local 2
+    sub
+    push constant 1
+    add
+    push local 1
+    call Matrix.get 3
+    pop local 3
+    push local 3
+    push constant 1
+    eq
+    not
+    if-goto Piece_29
+    push local 0
+    push local 1
+    push local 2
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    goto Piece_28
+label Piece_29
+label Piece_28
+    push local 2
+    push constant 1
+    add
+    pop local 2
+    goto Piece_26
+label Piece_27
+    push local 1
+    push constant 1
+    add
+    pop local 1
+    goto Piece_24
+label Piece_25
+    push local 0
+    return
+function Piece.rotateCCW 4
+    push argument 0
+    pop pointer 0
+    push argument 2
+    push argument 2
+    push constant 0
+    call Matrix.new 3
+    pop local 0
+    push constant 1
+    pop local 1
+label Piece_30
+    push local 1
+    push argument 2
+    push constant 1
+    add
+    lt
+    not
+    if-goto Piece_31
+    push constant 1
+    pop local 2
+label Piece_32
+    push local 2
+    push argument 2
+    push constant 1
+    add
+    lt
+    not
+    if-goto Piece_33
+    push argument 1
+    push local 2
+    push argument 2
+    push local 1
+    sub
+    push constant 1
+    add
+    call Matrix.get 3
+    pop local 3
+    push local 3
+    push constant 1
+    eq
+    not
+    if-goto Piece_35
+    push local 0
+    push local 1
+    push local 2
+    push constant 1
+    call Matrix.set_point 4
+    pop temp 0
+    goto Piece_34
+label Piece_35
+label Piece_34
+    push local 2
+    push constant 1
+    add
+    pop local 2
+    goto Piece_32
+label Piece_33
+    push local 1
+    push constant 1
+    add
+    pop local 1
+    goto Piece_30
+label Piece_31
+    push local 0
+    return
+function Piece.canPlaceWith 8
+    push argument 0
+    pop pointer 0
+    push this 5
+    pop local 0
+    push argument 1
+    call Grid.getRows 1
+    pop local 5
+    push argument 1
+    call Grid.getCols 1
+    pop local 6
+    push constant 1
+    pop local 1
+label Piece_36
+    push local 1
+    push local 0
+    push constant 1
+    add
+    lt
+    not
+    if-goto Piece_37
+    push constant 1
+    pop local 2
+label Piece_38
+    push local 2
+    push local 0
+    push constant 1
+    add
+    lt
+    not
+    if-goto Piece_39
+    push argument 2
+    push local 1
+    push local 2
+    call Matrix.get 3
+    pop local 7
+    push local 7
+    push constant 1
+    eq
+    not
+    if-goto Piece_41
+    push argument 3
+    push argument 5
+    add
+    push local 1
+    add
+    push constant 1
+    sub
+    pop local 3
+    push argument 4
+    push argument 6
+    add
+    push local 2
+    add
+    push constant 1
+    sub
+    pop local 4
+    push local 4
+    push constant 1
+    lt
+    push local 4
+    push local 6
+    gt
+    or
+    push local 3
+    push constant 1
+    lt
+    or
+    push local 3
+    push local 5
+    gt
+    or
+    not
+    if-goto Piece_43
+    push constant 0
+    return
+    goto Piece_42
+label Piece_43
+label Piece_42
+    push argument 1
+    push local 3
+    push local 4
+    call Grid.getPoint 3
+    push constant 1
+    eq
+    not
+    if-goto Piece_45
+    push constant 0
+    return
+    goto Piece_44
+label Piece_45
+label Piece_44
+    goto Piece_40
+label Piece_41
+label Piece_40
+    push local 2
+    push constant 1
+    add
+    pop local 2
+    goto Piece_38
+label Piece_39
+    push local 1
+    push constant 1
+    add
+    pop local 1
+    goto Piece_36
+label Piece_37
+    push constant 1
+    neg
+    return
+function Piece.tryRotateCW 7
+    push argument 0
+    pop pointer 0
+    push pointer 0
+    push this 4
+    push this 5
+    call Piece.rotateCW 3
+    pop local 0
+    push this 0
+    push constant 0
+    eq
+    not
+    if-goto Piece_47
+    push constant 1
+    neg
+    pop local 6
+    push constant 7
+    pop local 4
+    goto Piece_46
+label Piece_47
+    push constant 0
+    pop local 6
+    push constant 5
+    pop local 4
+label Piece_46
+    push constant 0
+    pop local 1
+label Piece_48
+    push local 1
+    push local 4
+    lt
+    not
+    if-goto Piece_49
+    push local 1
+    push constant 0
+    eq
+    not
+    if-goto Piece_51
+    push constant 0
+    pop local 2
+    push constant 0
+    pop local 3
+    goto Piece_50
+label Piece_51
+label Piece_50
+    push local 1
+    push constant 1
+    eq
+    not
+    if-goto Piece_53
+    push constant 1
+    pop local 2
+    push constant 0
+    pop local 3
+    goto Piece_52
+label Piece_53
+label Piece_52
+    push local 1
+    push constant 2
+    eq
+    not
+    if-goto Piece_55
+    push constant 1
+    neg
+    pop local 2
+    push constant 0
+    pop local 3
+    goto Piece_54
+label Piece_55
+label Piece_54
+    push local 1
+    push constant 3
+    eq
+    push local 6
+    and
+    not
+    if-goto Piece_57
+    push constant 2
+    pop local 2
+    push constant 0
+    pop local 3
+    goto Piece_56
+label Piece_57
+label Piece_56
+    push local 1
+    push constant 4
+    eq
+    push local 6
+    and
+    not
+    if-goto Piece_59
+    push constant 2
+    neg
+    pop local 2
+    push constant 0
+    pop local 3
+    goto Piece_58
+label Piece_59
+label Piece_58
+    push local 1
+    push constant 5
+    eq
+    push local 6
+    and
+    push local 1
+    push constant 3
+    eq
+    push local 6
+    not
+    and
+    or
+    not
+    if-goto Piece_61
+    push constant 0
+    pop local 2
+    push constant 1
+    pop local 3
+    goto Piece_60
+label Piece_61
+label Piece_60
+    push local 1
+    push constant 6
+    eq
+    push local 6
+    and
+    push local 1
+    push constant 4
+    eq
+    push local 6
+    not
+    and
+    or
+    not
+    if-goto Piece_63
+    push constant 0
+    pop local 2
+    push constant 1
+    neg
+    pop local 3
+    goto Piece_62
+label Piece_63
+label Piece_62
+    push pointer 0
+    push argument 1
+    push local 0
+    push this 1
+    push this 2
+    push local 3
+    push local 2
+    call Piece.canPlaceWith 7
+    pop local 5
+    push local 5
+    not
+    if-goto Piece_65
+    push this 4
+    call Matrix.dispose 1
+    pop temp 0
+    push local 0
+    pop this 4
+    push this 2
+    push local 2
+    add
+    pop this 2
+    push this 1
+    push local 3
+    add
+    pop this 1
+    push constant 1
+    neg
+    return
+    goto Piece_64
+label Piece_65
+label Piece_64
+    push local 1
+    push constant 1
+    add
+    pop local 1
+    goto Piece_48
+label Piece_49
+    push local 0
+    call Matrix.dispose 1
+    pop temp 0
+    push constant 0
+    return
+function Piece.tryRotateCCW 7
+    push argument 0
+    pop pointer 0
+    push pointer 0
+    push this 4
+    push this 5
+    call Piece.rotateCCW 3
+    pop local 0
+    push this 0
+    push constant 0
+    eq
+    not
+    if-goto Piece_67
+    push constant 1
+    neg
+    pop local 6
+    push constant 7
+    pop local 4
+    goto Piece_66
+label Piece_67
+    push constant 0
+    pop local 6
+    push constant 5
+    pop local 4
+label Piece_66
+    push constant 0
+    pop local 1
+label Piece_68
+    push local 1
+    push local 4
+    lt
+    not
+    if-goto Piece_69
+    push local 1
+    push constant 0
+    eq
+    not
+    if-goto Piece_71
+    push constant 0
+    pop local 2
+    push constant 0
+    pop local 3
+    goto Piece_70
+label Piece_71
+label Piece_70
+    push local 1
+    push constant 1
+    eq
+    not
+    if-goto Piece_73
+    push constant 1
+    pop local 2
+    push constant 0
+    pop local 3
+    goto Piece_72
+label Piece_73
+label Piece_72
+    push local 1
+    push constant 2
+    eq
+    not
+    if-goto Piece_75
+    push constant 1
+    neg
+    pop local 2
+    push constant 0
+    pop local 3
+    goto Piece_74
+label Piece_75
+label Piece_74
+    push local 1
+    push constant 3
+    eq
+    push local 6
+    and
+    not
+    if-goto Piece_77
+    push constant 2
+    pop local 2
+    push constant 0
+    pop local 3
+    goto Piece_76
+label Piece_77
+label Piece_76
+    push local 1
+    push constant 4
+    eq
+    push local 6
+    and
+    not
+    if-goto Piece_79
+    push constant 2
+    neg
+    pop local 2
+    push constant 0
+    pop local 3
+    goto Piece_78
+label Piece_79
+label Piece_78
+    push local 1
+    push constant 5
+    eq
+    push local 6
+    and
+    push local 1
+    push constant 3
+    eq
+    push local 6
+    not
+    and
+    or
+    not
+    if-goto Piece_81
+    push constant 0
+    pop local 2
+    push constant 1
+    pop local 3
+    goto Piece_80
+label Piece_81
+label Piece_80
+    push local 1
+    push constant 6
+    eq
+    push local 6
+    and
+    push local 1
+    push constant 4
+    eq
+    push local 6
+    not
+    and
+    or
+    not
+    if-goto Piece_83
+    push constant 0
+    pop local 2
+    push constant 1
+    neg
+    pop local 3
+    goto Piece_82
+label Piece_83
+label Piece_82
+    push pointer 0
+    push argument 1
+    push local 0
+    push this 1
+    push this 2
+    push local 3
+    push local 2
+    call Piece.canPlaceWith 7
+    pop local 5
+    push local 5
+    not
+    if-goto Piece_85
+    push this 4
+    call Matrix.dispose 1
+    pop temp 0
+    push local 0
+    pop this 4
+    push this 2
+    push local 2
+    add
+    pop this 2
+    push this 1
+    push local 3
+    add
+    pop this 1
+    push constant 1
+    neg
+    return
+    goto Piece_84
+label Piece_85
+label Piece_84
+    push local 1
+    push constant 1
+    add
+    pop local 1
+    goto Piece_68
+label Piece_69
+    push local 0
+    call Matrix.dispose 1
+    pop temp 0
+    push constant 0
+    return
+function Piece.hardDrop 1
+    push argument 0
+    pop pointer 0
+    push constant 0
+    pop local 0
+label Piece_86
+    push pointer 0
+    push argument 1
+    push constant 0
+    push constant 1
+    call Piece.canMove 4
+    not
+    if-goto Piece_87
+    push this 1
+    push constant 1
+    add
+    pop this 1
+    push local 0
+    push constant 1
+    add
+    pop local 0
+    goto Piece_86
+label Piece_87
+    push local 0
+    return
+function Piece.drawPieceInGrid 6
+    push argument 0
+    pop pointer 0
+    push constant 1
+    pop local 4
+    push constant 1
+    pop local 5
+    push argument 1
+    push local 4
+    push constant 1
+    sub
+    push argument 2
+    push argument 3
+    add
+    call Math.multiply 2
+    add
+    pop local 0
+    push local 5
+    push constant 1
+    sub
+    push argument 2
+    push argument 3
+    add
+    call Math.multiply 2
+    pop local 2
+    push local 0
+    push argument 2
+    add
+    pop local 1
+    push local 2
+    push argument 2
+    add
+    pop local 3
+    push local 0
+    push local 2
+    push local 1
+    push local 3
+    call Screen.drawRectangle 4
+    pop temp 0
+    push constant 0
+    return
+function Piece.dispose 0
+    push argument 0
+    pop pointer 0
+    push this 4
+    call Matrix.dispose 1
+    pop temp 0
+    push pointer 0
+    call Memory.deAlloc 1
+    pop temp 0
+    push constant 0
+    return
