@@ -2,6 +2,7 @@
 VMTranslator
 */test_files*
 *.*:ZoneIdentifier
+Compiler
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
