@@ -181,9 +181,11 @@ class CompilationEngine:
     Creates a new compilation engine with the given input and output streams.
     Typically: keep references to the tokenizer and the writer.
     """
-    def __init__(self, input_stream, output_stream):
-        self.tokenizer = input_stream
-        self.out = output_stream
+    def __init__(self, tknzr, indent_level, file):
+        self.tknzr = tknzr
+        self.indent_level = indent_level
+        self.f = file
+        self.specialOutput = {'<': '&lt;', '>': '&gt;', '"': '&quot;', '&': '&amp;'}
         
         return
 
@@ -212,6 +214,16 @@ class CompilationEngine:
     """
     def compileClass(self):
         
+        while self.tknzr.hasMoreTokens():
+            token = self.tknzr.getCurTokenValue()
+            tokenType = self.tknzr.getCurTokenType()
+            # compile type: (recursive calls, advance/eat at leaf (also write to file))
+
+            line = f'<{tokenType}> {self.specialOutput[token] if token in self.specialOutput else token} </{tokenType}>\n'
+            
+            self.f.write(line)
+            self.tknzr.advance()
+
         return
 
     """
@@ -340,49 +352,66 @@ class CompilationEngine:
 class JackAnalyzer():
     def __init__(self, inputPaths):
         self.filesList = inputPaths
-        self.specialOutput = {'<': '&lt;', '>': '&gt;', '"': '&quot;', '&': '&amp;'}
+        self.tokenizer = None
+        self.compilation_engine = None
+
+    def drive_analyze(self):
+        print(f'\nTranslating file(s): {self.filesList}\n')
+
+        for file in self.filesList:
+            self.analyze(file)
 
 
-    def analyze(self):
-        if len(self.filesList) > 1:
-            # folder mode
-            print(f'\nTranslating all files: {self.filesList}\n')
+    def analyze(self, file):
 
-            # for each file in list:
-            #       Translate
-            #           1. tokenizer call
-            #           2. compilation engine -> compile class    
+        # single file -- with compilation engine
+        print(f'\nTranslating single file: {file}\n')
+        self.tokenizer = Tokenizer(file)
 
-        else:
-            # single file
+        # setup output file
+        baseName, _ = os.path.splitext(file)
+        outputFileName = baseName + "_test" + ".xml"
+        print(f'\nOutput File: {outputFileName}\n')
+        
+        indent_level = 1
+        with open(outputFileName, "w") as f:
+            self.compilation_engine = CompilationEngine(self.tokenizer, indent_level, f)
+            line = f'<tokens>\n'
+            f.write(line)
+            
+            self.compilation_engine.compileClass()
 
-            print(f'\nTranslating single file: {self.filesList[0]}\n')
-            tokenizer = Tokenizer(self.filesList[0])
+            line = f'</tokens>\n'
+            f.write(line)
 
-            baseName, _ = os.path.splitext(self.filesList[0])
-            print(baseName)
-            outputFileName = baseName + "_test" + ".xml"
+        
+        # single file -- no compilation engine
 
+        # print(f'\nTranslating single file: {self.filesList[0]}\n')
+        # tokenizer = Tokenizer(self.filesList[0])
 
+        # baseName, _ = os.path.splitext(self.filesList[0])
+        # outputFileName = baseName + "_test" + ".xml"
+        # print(f'\nOutput File: {outputFileName}\n')
 
-            with open(outputFileName, "w") as f:
-                line = f'<tokens>\n'
-                f.write(line)
-                while tokenizer.hasMoreTokens():
-                    token = tokenizer.getCurTokenValue()
-                    tokenType = tokenizer.getCurTokenType()
-                    line = f'<{tokenType}> {self.specialOutput[token] if token in self.specialOutput else token} </{tokenType}>\n'
-                    f.write(line)
-                    tokenizer.advance()
-                line = f'</tokens>\n'
-                f.write(line)
+        # with open(outputFileName, "w") as f:
+        #     line = f'<tokens>\n'
+        #     f.write(line)
+        #     while tokenizer.hasMoreTokens():
+        #         token = tokenizer.getCurTokenValue()
+        #         tokenType = tokenizer.getCurTokenType()
+        #         line = f'<{tokenType}> {self.specialOutput[token] if token in self.specialOutput else token} </{tokenType}>\n'
+        #         f.write(line)
+        #         tokenizer.advance()
+        #     line = f'</tokens>\n'
+        #     f.write(line)
 
 
 def main(files):
     print("\nrunning main")
 
     analyzer = JackAnalyzer(files)
-    analyzer.analyze()
+    analyzer.drive_analyze()
 
 
     return
