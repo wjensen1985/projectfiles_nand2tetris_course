@@ -186,8 +186,13 @@ class CompilationEngine:
         self.indent_level = indent_level
         self.f = file
         self.specialOutput = {'<': '&lt;', '>': '&gt;', '"': '&quot;', '&': '&amp;'}
+        self.indents = ""
         
         return
+
+    def updateIndents(self, change):
+        self.indent_level += change
+        self.indents = self.indent_level * "  "
 
     # ------------------------------------------------------------
     # Top-level and declarations
@@ -196,15 +201,19 @@ class CompilationEngine:
     """
     
     """
-    def eat(self):
-        currentToken = "test"
-        if (currentToken is not str):
-            # error
-            return False
+    def eat(self, expected=[]):
+        currentToken = self.tknzr.getCurTokenValue()
+        currentTokenType = self.tknzr.getCurTokenType()
+        # if (currentTokenType is str) and (currentToken in expected if len(expected) > 0 else True):
+        if (type(currentToken) is str) and (currentToken in expected if len(expected) > 0 else True):
+            self.f.write(f'{self.indents}<{currentTokenType}> {currentToken} </{currentTokenType}>\n')
+            print(f'<{currentTokenType}> {currentToken} </{currentTokenType}>')
         else:
-            # advance tokenizer
+            print("syntax error")
+            self.f.write("syntax error\n")
 
-            pass
+        if self.tknzr.hasMoreTokens():
+            self.tknzr.advance()
 
         return True
 
@@ -214,15 +223,44 @@ class CompilationEngine:
     """
     def compileClass(self):
         
-        while self.tknzr.hasMoreTokens():
-            token = self.tknzr.getCurTokenValue()
-            tokenType = self.tknzr.getCurTokenType()
-            # compile type: (recursive calls, advance/eat at leaf (also write to file))
+        """
+        class: 'class' className '{' classVarDec* subroutineDec* '}'
+        
+        """
 
-            line = f'<{tokenType}> {self.specialOutput[token] if token in self.specialOutput else token} </{tokenType}>\n'
+        self.f.write(f'{self.indents}<class>\n')
+
+        self.updateIndents(1)
+        self.eat(["class"])
+
+        # how to handle className?? --> indentifier, just eat w/identifier tags?
+        # will be handled in eat if nothing passed directly
+        self.eat()
+
+        self.eat(["{"])
+
+        # need checks for how many (if any) of classVarDec & subroutineDec
+        self.compileClassVarDec()
+        self.compileSubroutineDec()
+
+        self.eat(["}"])
+        self.updateIndents(-1)
+
+        self.f.write(f'{self.indents}</class>\n')
+        
+        # while self.tknzr.hasMoreTokens():
+        #     token = self.tknzr.getCurTokenValue()
+        #     tokenType = self.tknzr.getCurTokenType()
+        #     # compile type: (recursive calls, advance/eat at leaf (also write to file))
+        #     if token in ["if", "let"]:
+        #         self.compileStatements()
+        #     else:
+        #         line = f'<{tokenType}> {self.specialOutput[token] if token in self.specialOutput else token} </{tokenType}>\n'
             
-            self.f.write(line)
-            self.tknzr.advance()
+        #     # print(line)
+        #     self.f.write(line)
+        #     if self.tknzr.hasMoreTokens():
+        #         self.tknzr.advance()
 
         return
 
@@ -231,15 +269,57 @@ class CompilationEngine:
     Handles sequences like: ('static'|'field') type varName (',' varName)* ';'
     """
     def compileClassVarDec(self):
+        """
+        classVarDec: ('static'|'field') type varName (','varName)* ';'
+        type: 'int'|'char'|'boolean'|className
+        """
+
+        self.f.write(f'{self.indents}<classVarDec>\n')
+        self.updateIndents(1)
+
+
+        self.eat(["static", "field"])
+        # how to handle className ?? -> just eat as is
+        self.eat()
+        # self.eat(["int", "char", "boolean", "className"])
+        # how to handle varName(s) --> just eat as is
+        while self.tknzr.getCurTokenValue() != ";":
+            self.eat()
         
+        self.eat([";"])
+
+        self.updateIndents(-1)
+        self.f.write(f'{self.indents}</classVarDec>\n')
+
         return
 
     """
     Compiles a complete method, function, or constructor declaration.
     Handles header ('constructor'|'function'|'method' ...) and delegates body.
     """
-    def compileSubroutine(self):
+    def compileSubroutineDec(self):
+        """
+        subroutineDec: ('constructor'|'function'|'method') ('void'|type) subroutineName '(' parameterList ')' subRoutineBody
+        """
+
+        self.f.write(f'{self.indents}<subroutineDec>\n')
+        self.updateIndents(1)
+
+
+        self.eat(["constructor", "function", "method"])
+        self.eat()
+        self.eat()
+        self.eat(['('])
+
+        self.compileParameterList()
         
+        self.eat([')'])
+
+        self.compileSubroutineBody()
+        
+        self.updateIndents(-1)
+        self.f.write(f'{self.indents}</subroutineDec>\n')
+
         return
 
     """
@@ -247,7 +327,18 @@ class CompilationEngine:
     Does not handle the enclosing parentheses tokens '(' and ')'.
     """
     def compileParameterList(self):
+        """
+        parameterList: ( (type varName) (','type varName)*)?
+        """
+        self.f.write(f'{self.indents}<parameterList>\n')
         
+        self.updateIndents(1)
+        while self.tknzr.getCurTokenValue() != ')':
+            self.eat()
+
+        self.updateIndents(-1)
+        self.f.write(f'{self.indents}</parameterList>\n')
+
         return
 
     """
@@ -255,7 +346,24 @@ class CompilationEngine:
     Handles '{' varDec* statements '}'.
     """
     def compileSubroutineBody(self):
+        """
+        subroutineBody: '{' varDec* statements '}'
+        """
+
+        self.f.write(f'{self.indents}<subroutineBody>\n')
+        self.updateIndents(1)
+
+        self.eat(["{"])
         
+        self.compileVarDec()
+
+        self.compileStatements()
+        
+        self.eat(["}"])
+
+        self.updateIndents(-1)
+        self.f.write(f'{self.indents}</subroutineBody>\n')
+
         return
 
     """
@@ -263,6 +371,21 @@ class CompilationEngine:
     Handles 'var' type varName (',' varName)* ';'
     """
     def compileVarDec(self):
+        """
+        varDec: 'var' type varName (','varName)* ';'
+        """
+        self.f.write(f'{self.indents}<varDec>\n')
+        self.updateIndents(1)
+
+        self.eat(["var"])
+        
+        while self.tknzr.getCurTokenValue() != ';':
+            self.eat()
+
+        self.eat([";"])
+
+        self.updateIndents(-1)
+        self.f.write(f'{self.indents}</varDec>\n')
         
         return
 
@@ -271,6 +394,35 @@ class CompilationEngine:
     Does not handle the enclosing curly braces '{' and '}'.
     """
     def compileStatements(self):
+        """
+        statements: statement*
+        statement: letStatement | ifStatement | whileStatement | doStatement | returnStatement
+        """
+
+        self.f.write(f'{self.indents}<statements>\n')
+        self.updateIndents(1)
+
+        if self.tknzr.getCurTokenType() == "keyword":
+            print("compile statements, statement starts with keyword check passed")
+            curToken = self.tknzr.getCurTokenValue()
+            if curToken == 'if':
+                self.compileIf()
+            elif curToken == 'while':
+                self.compileWhile()
+            elif curToken == 'do':
+                self.compileDo()
+            elif curToken == 'let':
+                self.compileLet()
+            elif curToken == 'return':
+                self.compileReturn()
+            else:
+                print("syntax error: no keyword found for statement")
+        else:
+            print("compile statements, statement starts with keyword check failed")
+            print(f'compile statements, statement expected to start with keyword: current token: "{self.tknzr.getCurTokenValue()}" current token type: "{self.tknzr.getCurTokenType()}"')
+
+        self.updateIndents(-1)
+        self.f.write(f'{self.indents}</statements>\n')
         
         return
 
@@ -283,7 +435,29 @@ class CompilationEngine:
     Handles: 'let' varName ('[' expression ']')? '=' expression ';'
     """
     def compileLet(self):
+        """
+        letStatement: 'let' varName ('[' expression ']')? '=' expression ';'
+        """
+
+        self.f.write(f'{self.indents}<letStatement>\n')
+        self.updateIndents(1)
+
+        self.eat(["let"])
+        self.eat()
+
+        if self.tknzr.getCurTokenValue() == '[':
+            self.eat()
+            self.compileExpression()
+            self.eat()
         
+        self.eat(["="])
+        
+        self.compileExpression()
+        
+        self.eat([";"])
+
+        self.updateIndents(-1)
+        self.f.write(f'{self.indents}<letStatement>\n')
         return
 
     """
@@ -291,7 +465,31 @@ class CompilationEngine:
     Handles: 'if' '(' expression ')' '{' statements '}' ('else' '{' statements '}')?
     """
     def compileIf(self):
-        
+        """
+        'if' '(' expressions ')' '{' statements '}' ('else''{' statements '}' )?
+        """
+
+        self.f.write(f'{self.indents}<ifStatement>\n')
+        self.updateIndents(1)
+
+        self.eat(["if"])
+        self.eat(["("])
+        self.compileExpressionList()
+        self.eat([")"])
+        self.eat(["{"])
+        self.compileStatements()
+        self.eat(["}"])
+
+        # check for else statement
+        if self.tknzr.getCurTokenValue() == "else":
+            self.eat(["else"])
+            self.eat(["{"])
+            self.compileStatements()
+            self.eat(["}"])
+
+        self.updateIndents(-1)
+        self.f.write(f'{self.indents}</ifStatement>\n')
+
         return
 
     """
@@ -299,7 +497,22 @@ class CompilationEngine:
     Handles: 'while' '(' expression ')' '{' statements '}'
     """
     def compileWhile(self):
+        # while statement: 'while' '(' 'expression' ')' '{' 'statements '}'
+
+        self.f.write(f'{self.indents}<whileStatement>\n')
+        self.updateIndents(1)
         
+        self.eat(["while"])
+        self.eat(["("])
+        self.compileExpression()
+        self.eat([")"])
+        self.eat(["{"])
+        self.compileStatements()
+        self.eat(["}"])
+
+        self.updateIndents(-1)
+        self.f.write(f'{self.indents}</whileStatement>\n')
+
         return
 
     """
@@ -307,6 +520,21 @@ class CompilationEngine:
     Handles: 'do' subroutineCall ';'
     """
     def compileDo(self):
+        """
+        doSatement: 'do' subroutineCall ';'
+        """
+
+        self.f.write(f'{self.indents}<doStatement>\n')
+        self.updateIndents(1)
+
+        self.eat(["do"])
+
+        # how to handle subroutine call??
+        
+        self.eat([";"])
+        
+        self.updateIndents(-1)
+        self.f.write(f'{self.indents}<doStatement>\n')
         
         return
 
@@ -315,7 +543,23 @@ class CompilationEngine:
     Handles: 'return' expression? ';'
     """
     def compileReturn(self):
-        
+        """
+        returnStatement: 'return' expression? ';'
+        """
+
+        self.f.write(f'{self.indents}<returnStatement>\n')
+        self.updateIndents(1)
+
+        self.eat(["return"])
+
+        if self.tknzr.getCurToken != ';':
+            self.compileExpression()
+
+        self.eat([";"])
+
+        self.updateIndents(-1)
+        self.f.write(f'{self.indents}<returnStatement>\n')
+
         return
 
     # ------------------------------------------------------------
@@ -327,7 +571,15 @@ class CompilationEngine:
     Handles: term (op term)*
     """
     def compileExpression(self):
-       
+        
+        self.f.write(f'{self.indents}<expression>\n')
+        self.updateIndents(1)
+
+        # handle expression
+
+        self.updateIndents(-1)
+        self.f.write(f'{self.indents}</expression>\n')
+        
         return
 
     """
@@ -370,19 +622,19 @@ class JackAnalyzer():
 
         # setup output file
         baseName, _ = os.path.splitext(file)
-        outputFileName = baseName + "_test" + ".xml"
+        outputFileName = baseName + "_test_cmpeng" + ".xml"
         print(f'\nOutput File: {outputFileName}\n')
         
-        indent_level = 1
+        indent_level = 0
         with open(outputFileName, "w") as f:
             self.compilation_engine = CompilationEngine(self.tokenizer, indent_level, f)
-            line = f'<tokens>\n'
-            f.write(line)
+            # line = f'<tokens>\n'
+            # f.write(line)
             
             self.compilation_engine.compileClass()
 
-            line = f'</tokens>\n'
-            f.write(line)
+            # line = f'</tokens>\n'
+            # f.write(line)
 
         
         # single file -- no compilation engine
