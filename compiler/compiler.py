@@ -187,6 +187,9 @@ class CompilationEngine:
         self.f = file
         self.specialOutput = {'<': '&lt;', '>': '&gt;', '"': '&quot;', '&': '&amp;'}
         self.indents = ""
+        self.opList = {'+', '-', '*', '/', '&', '|', '<', '>', '='}
+        self.unaryOpList = {'-', '~'}
+        self.subroutineKeywordList = {'constructor', 'function', 'method'}
         
         return
 
@@ -207,9 +210,9 @@ class CompilationEngine:
         # if (currentTokenType is str) and (currentToken in expected if len(expected) > 0 else True):
         if (type(currentToken) is str) and (currentToken in expected if len(expected) > 0 else True):
             self.f.write(f'{self.indents}<{currentTokenType}> {currentToken} </{currentTokenType}>\n')
-            print(f'<{currentTokenType}> {currentToken} </{currentTokenType}>')
+            # print(f'<{currentTokenType}> {currentToken} </{currentTokenType}>')
         else:
-            print("syntax error")
+            print(f'syntax error from eat: current token value: "{currentToken}", current token type: "{currentTokenType}"')
             self.f.write("syntax error\n")
 
         if self.tknzr.hasMoreTokens():
@@ -241,7 +244,9 @@ class CompilationEngine:
 
         # need checks for how many (if any) of classVarDec & subroutineDec
         self.compileClassVarDec()
-        self.compileSubroutineDec()
+
+        while self.tknzr.hasMoreTokens() and self.tknzr.getCurTokenValue() in self.subroutineKeywordList:
+            self.compileSubroutineDec()
 
         self.eat(["}"])
         self.updateIndents(-1)
@@ -402,24 +407,27 @@ class CompilationEngine:
         self.f.write(f'{self.indents}<statements>\n')
         self.updateIndents(1)
 
-        if self.tknzr.getCurTokenType() == "keyword":
-            print("compile statements, statement starts with keyword check passed")
-            curToken = self.tknzr.getCurTokenValue()
-            if curToken == 'if':
-                self.compileIf()
-            elif curToken == 'while':
-                self.compileWhile()
-            elif curToken == 'do':
-                self.compileDo()
-            elif curToken == 'let':
-                self.compileLet()
-            elif curToken == 'return':
-                self.compileReturn()
+        # needs looped for if more than one statement
+        while self.tknzr.getCurTokenType() == "keyword": 
+            if self.tknzr.getCurTokenType() == "keyword":
+                # print("compile statements, statement starts with keyword check passed")
+                curToken = self.tknzr.getCurTokenValue()
+                # print(curToken)
+                if curToken == 'if':
+                    self.compileIf()
+                elif curToken == 'while':
+                    self.compileWhile()
+                elif curToken == 'do':
+                    self.compileDo()
+                elif curToken == 'let':
+                    self.compileLet()
+                elif curToken == 'return':
+                    self.compileReturn()
+                else:
+                    print("syntax error: no keyword found for statement")
             else:
-                print("syntax error: no keyword found for statement")
-        else:
-            print("compile statements, statement starts with keyword check failed")
-            print(f'compile statements, statement expected to start with keyword: current token: "{self.tknzr.getCurTokenValue()}" current token type: "{self.tknzr.getCurTokenType()}"')
+                print("compile statements, statement starts with keyword check failed")
+                print(f'compile statements, statement expected to start with keyword: current token: "{self.tknzr.getCurTokenValue()}" current token type: "{self.tknzr.getCurTokenType()}"')
 
         self.updateIndents(-1)
         self.f.write(f'{self.indents}</statements>\n')
@@ -457,7 +465,8 @@ class CompilationEngine:
         self.eat([";"])
 
         self.updateIndents(-1)
-        self.f.write(f'{self.indents}<letStatement>\n')
+        self.f.write(f'{self.indents}</letStatement>\n')
+
         return
 
     """
@@ -474,7 +483,7 @@ class CompilationEngine:
 
         self.eat(["if"])
         self.eat(["("])
-        self.compileExpressionList()
+        self.compileExpression()
         self.eat([")"])
         self.eat(["{"])
         self.compileStatements()
@@ -529,12 +538,12 @@ class CompilationEngine:
 
         self.eat(["do"])
 
-        # how to handle subroutine call??
+        self.compileSubroutineCall()
         
         self.eat([";"])
         
         self.updateIndents(-1)
-        self.f.write(f'{self.indents}<doStatement>\n')
+        self.f.write(f'{self.indents}</doStatement>\n')
         
         return
 
@@ -552,13 +561,13 @@ class CompilationEngine:
 
         self.eat(["return"])
 
-        if self.tknzr.getCurToken != ';':
+        if self.tknzr.getCurTokenValue() != ';':
             self.compileExpression()
 
         self.eat([";"])
 
         self.updateIndents(-1)
-        self.f.write(f'{self.indents}<returnStatement>\n')
+        self.f.write(f'{self.indents}</returnStatement>\n')
 
         return
 
@@ -572,10 +581,17 @@ class CompilationEngine:
     """
     def compileExpression(self):
         
+        # expression: term (op term)*
+
         self.f.write(f'{self.indents}<expression>\n')
         self.updateIndents(1)
 
         # handle expression
+        self.compileTerm()
+
+        while (self.tknzr.getCurTokenType() == 'symbol') and (self.tknzr.getCurTokenValue() in self.opList):
+            self.eat()
+            self.compileTerm()
 
         self.updateIndents(-1)
         self.f.write(f'{self.indents}</expression>\n')
@@ -589,6 +605,17 @@ class CompilationEngine:
     and parenthesized expressions.
     """
     def compileTerm(self):
+
+        # term: intergerConstant | stringConstant | keywordConstant | varName | varName '[' expression ']' 
+        # | subroutineCall | '( expression ')' | unaryOp term
+
+        self.f.write(f'{self.indents}<term>\n')
+        self.updateIndents(1)
+        
+        self.eat()
+        
+        self.updateIndents(-1)
+        self.f.write(f'{self.indents}</term>\n')
         
         return
 
@@ -597,9 +624,38 @@ class CompilationEngine:
     Returns the number of expressions in the list (per the book’s API).
     """
     def compileExpressionList(self):
-        
-        return
+        # expression list
 
+        self.f.write(f'{self.indents}<expressionList>\n')
+        self.updateIndents(1)
+
+
+
+        self.updateIndents(-1)
+        self.f.write(f'{self.indents}</expressionList>\n')
+
+        return
+    
+
+    """
+    Compiles subroutine call
+    """
+    def compileSubroutineCall(self):
+        # subroutineName '(' expressionList ')' | (className | varName) '.' subroutineName '(' expressionList ')'
+
+        self.eat()
+
+        if self.tknzr.getCurTokenValue() == '.':
+            self.eat(['.'])
+            self.eat()
+
+        self.eat(['('])
+
+        self.compileExpressionList()
+
+        self.eat([')'])
+
+        return
 
 class JackAnalyzer():
     def __init__(self, inputPaths):
