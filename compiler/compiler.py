@@ -130,40 +130,11 @@ class Tokenizer:
     def getCurTokenValue(self):
         return self.tokens[self.curTokenIdx][0]
     
-    """
-    call only if the current token type is KEYWORD
-    """
-    def curKeyWord(self):
-
-        return
-    
-    """
-    call only if the current token type is SYMBOL
-    """
-    def curSymbol(self):
-
-        return
-    
-    """
-    call only if the current token type is IDENTIFIER
-    """
-    def curIdentifier(self):
-
-        return
-    
-    """
-    call only if the current token type is INT_CONST
-    """
-    def curIntVal(self):
-
-        return
-    
-    """
-    call only if the current token type is STRING_CONST
-    """
-    def curStringVal(self):
-
-        return
+    def peek(self):
+        if self.curTokenIdx + 1 < len(self.tokens):
+            return [True, self.tokens[self.curTokenIdx + 1]]
+        else:
+            return [False, None]
 
 
 
@@ -190,6 +161,7 @@ class CompilationEngine:
         self.opList = {'+', '-', '*', '/', '&', '|', '<', '>', '='}
         self.unaryOpList = {'-', '~'}
         self.subroutineKeywordList = {'constructor', 'function', 'method'}
+        self.kwdConstList = {'true', 'false', 'null', 'this'}
         
         return
 
@@ -243,7 +215,8 @@ class CompilationEngine:
         self.eat(["{"])
 
         # need checks for how many (if any) of classVarDec & subroutineDec
-        self.compileClassVarDec()
+        while self.tknzr.getCurTokenValue() in ["static", "field"]:
+            self.compileClassVarDec()
 
         while self.tknzr.hasMoreTokens() and self.tknzr.getCurTokenValue() in self.subroutineKeywordList:
             self.compileSubroutineDec()
@@ -252,20 +225,6 @@ class CompilationEngine:
         self.updateIndents(-1)
 
         self.f.write(f'{self.indents}</class>\n')
-        
-        # while self.tknzr.hasMoreTokens():
-        #     token = self.tknzr.getCurTokenValue()
-        #     tokenType = self.tknzr.getCurTokenType()
-        #     # compile type: (recursive calls, advance/eat at leaf (also write to file))
-        #     if token in ["if", "let"]:
-        #         self.compileStatements()
-        #     else:
-        #         line = f'<{tokenType}> {self.specialOutput[token] if token in self.specialOutput else token} </{tokenType}>\n'
-            
-        #     # print(line)
-        #     self.f.write(line)
-        #     if self.tknzr.hasMoreTokens():
-        #         self.tknzr.advance()
 
         return
 
@@ -360,7 +319,8 @@ class CompilationEngine:
 
         self.eat(["{"])
         
-        self.compileVarDec()
+        while self.tknzr.getCurTokenValue() in ["static", "field"]:
+            self.compileVarDec()
 
         self.compileStatements()
         
@@ -583,18 +543,23 @@ class CompilationEngine:
         
         # expression: term (op term)*
 
-        self.f.write(f'{self.indents}<expression>\n')
-        self.updateIndents(1)
+        # is there an expression? if not exit w/o expression tags
+        # if cur token is an a term (then is expression else skip)
+        # term: identifier, unaryOp, '('
+        if (self.tknzr.getCurTokenType() == 'identifier') or (self.tknzr.getCurTokenValue() in self.unaryOpList) or (self.tknzr.getCurTokenValue() == '('):
+            # is term, else skip 
+            self.f.write(f'{self.indents}<expression>\n')
+            self.updateIndents(1)
 
-        # handle expression
-        self.compileTerm()
-
-        while (self.tknzr.getCurTokenType() == 'symbol') and (self.tknzr.getCurTokenValue() in self.opList):
-            self.eat()
+            # handle expression
             self.compileTerm()
 
-        self.updateIndents(-1)
-        self.f.write(f'{self.indents}</expression>\n')
+            while (self.tknzr.getCurTokenType() == 'symbol') and (self.tknzr.getCurTokenValue() in self.opList):
+                self.eat()
+                self.compileTerm()
+
+            self.updateIndents(-1)
+            self.f.write(f'{self.indents}</expression>\n')
         
         return
 
@@ -606,13 +571,37 @@ class CompilationEngine:
     """
     def compileTerm(self):
 
-        # term: intergerConstant | stringConstant | keywordConstant | varName | varName '[' expression ']' 
-        # | subroutineCall | '( expression ')' | unaryOp term
+        # term: intergerConstant | stringConstant | keywordConstant | varName | 
+        # varName '[' expression ']' | subroutineCall | '( expression ')' | 
+        # unaryOp term
 
         self.f.write(f'{self.indents}<term>\n')
         self.updateIndents(1)
         
-        self.eat()
+        # get token type?  keyword, symbol, string_constant, int_constant, identifier
+
+        # how to id subroutine, unary op?
+
+        cur = self.tknzr.getCurTokenValue()
+        hasNext, next = self.tknzr.peek()
+        if cur == '(':
+            self.eat(['('])
+            self.compileExpression()
+            self.eat([')'])
+        elif hasNext and next == '[':
+            self.eat()
+            self.eat('[')
+            self.compileExpression()
+            self.eat(']')
+        elif cur in self.unaryOpList:
+            self.eat()
+            self.compileTerm()
+        elif cur in self.kwdConstList:
+            self.eat()
+        elif hasNext and next == '(':
+            self.compileSubroutineCall()
+        else:
+            self.eat()
         
         self.updateIndents(-1)
         self.f.write(f'{self.indents}</term>\n')
@@ -629,7 +618,7 @@ class CompilationEngine:
         self.f.write(f'{self.indents}<expressionList>\n')
         self.updateIndents(1)
 
-
+        self.compileExpression()
 
         self.updateIndents(-1)
         self.f.write(f'{self.indents}</expressionList>\n')
@@ -656,6 +645,7 @@ class CompilationEngine:
         self.eat([')'])
 
         return
+
 
 class JackAnalyzer():
     def __init__(self, inputPaths):
@@ -725,7 +715,6 @@ def main(files):
     return
 
 
-
 def process_path(path):
     # check if the argument is a file
     if os.path.isfile(path):
@@ -745,6 +734,7 @@ def process_path(path):
     else:
         print(f"{path} does not exist or is not accessible")
         return []
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
