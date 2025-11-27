@@ -181,10 +181,11 @@ class CompilationEngine:
         currentTokenType = self.tknzr.getCurTokenType()
         # if (currentTokenType is str) and (currentToken in expected if len(expected) > 0 else True):
         if (type(currentToken) is str) and (currentToken in expected if len(expected) > 0 else True):
-            self.f.write(f'{self.indents}<{currentTokenType}> {currentToken} </{currentTokenType}>\n')
+            self.f.write(f'{self.indents}<{currentTokenType}> {currentToken if currentToken not in self.specialOutput else self.specialOutput[currentToken]} </{currentTokenType}>\n')
             # print(f'<{currentTokenType}> {currentToken} </{currentTokenType}>')
         else:
             print(f'syntax error from eat: current token value: "{currentToken}", current token type: "{currentTokenType}"')
+            print(expected)
             self.f.write("syntax error\n")
 
         if self.tknzr.hasMoreTokens():
@@ -319,7 +320,7 @@ class CompilationEngine:
 
         self.eat(["{"])
         
-        while self.tknzr.getCurTokenValue() in ["static", "field"]:
+        while self.tknzr.getCurTokenValue() in ["static", "field", "var"]:
             self.compileVarDec()
 
         self.compileStatements()
@@ -385,9 +386,11 @@ class CompilationEngine:
                     self.compileReturn()
                 else:
                     print("syntax error: no keyword found for statement")
+                    break
             else:
                 print("compile statements, statement starts with keyword check failed")
                 print(f'compile statements, statement expected to start with keyword: current token: "{self.tknzr.getCurTokenValue()}" current token type: "{self.tknzr.getCurTokenType()}"')
+                break
 
         self.updateIndents(-1)
         self.f.write(f'{self.indents}</statements>\n')
@@ -543,24 +546,19 @@ class CompilationEngine:
         
         # expression: term (op term)*
 
-        # is there an expression? if not exit w/o expression tags
-        # if cur token is an a term (then is expression else skip)
-        # term: identifier, unaryOp, '('
-        if (self.tknzr.getCurTokenType() == 'identifier') or (self.tknzr.getCurTokenValue() in self.unaryOpList) or (self.tknzr.getCurTokenValue() == '('):
-            # is term, else skip 
-            self.f.write(f'{self.indents}<expression>\n')
-            self.updateIndents(1)
+        self.f.write(f'{self.indents}<expression>\n')
+        self.updateIndents(1)
 
-            # handle expression
+        # handle expression
+        self.compileTerm()
+
+        while (self.tknzr.getCurTokenType() == 'symbol') and (self.tknzr.getCurTokenValue() in self.opList):
+            self.eat()
             self.compileTerm()
 
-            while (self.tknzr.getCurTokenType() == 'symbol') and (self.tknzr.getCurTokenValue() in self.opList):
-                self.eat()
-                self.compileTerm()
+        self.updateIndents(-1)
+        self.f.write(f'{self.indents}</expression>\n')
 
-            self.updateIndents(-1)
-            self.f.write(f'{self.indents}</expression>\n')
-        
         return
 
     """
@@ -583,7 +581,9 @@ class CompilationEngine:
         # how to id subroutine, unary op?
 
         cur = self.tknzr.getCurTokenValue()
-        hasNext, next = self.tknzr.peek()
+        hasNext, nx = self.tknzr.peek()
+        next, nextType = nx
+        
         if cur == '(':
             self.eat(['('])
             self.compileExpression()
@@ -600,7 +600,12 @@ class CompilationEngine:
             self.eat()
         elif hasNext and next == '(':
             self.compileSubroutineCall()
+        elif hasNext and next == '.':
+            self.eat()
+            self.eat(['.'])
+            self.compileSubroutineCall()
         else:
+            # print(f'next: {next}, cur: {self.tknzr.getCurTokenValue()}')
             self.eat()
         
         self.updateIndents(-1)
@@ -613,12 +618,26 @@ class CompilationEngine:
     Returns the number of expressions in the list (per the book’s API).
     """
     def compileExpressionList(self):
-        # expression list
+        # expression list: (expression (',' expression)* )?
 
         self.f.write(f'{self.indents}<expressionList>\n')
         self.updateIndents(1)
 
-        self.compileExpression()
+        # while self.tknzr.getCurTokenValue() != ')':
+        #     self.compileExpression()
+        #     if self.tknzr.getCurTokenValue() != ')':
+        #         self.eat([','])
+
+        # is there an expression? if not exit w/o expression tags
+        # if cur token is an a term (then is expression else skip)
+        # term: identifier, unaryOp, '('
+        while (self.tknzr.getCurTokenType() in ['identifier', 'stringConstant', 'integerConstant']) or (self.tknzr.getCurTokenValue() in self.kwdConstList) or (self.tknzr.getCurTokenValue() in self.unaryOpList) or (self.tknzr.getCurTokenValue() == '('):
+            # is term, else skip 
+            self.compileExpression()
+            if self.tknzr.getCurTokenValue() == ',':
+                self.eat([','])
+            else:
+                break
 
         self.updateIndents(-1)
         self.f.write(f'{self.indents}</expressionList>\n')
