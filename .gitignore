@@ -1,8 +1,9 @@
 # VMTranslator executable made w/MakeFile
 VMTranslator
-*/test_files*
+*./project10/p10_test_files*
+*./project11/p11_test_files*
 *.*:ZoneIdentifier
-Compiler
+JackCompiler
 JackAnalyzer
 
 # Byte-compiled / optimized / DLL files
