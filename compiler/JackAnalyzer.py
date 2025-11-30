@@ -49,7 +49,7 @@ class Tokenizer:
     """
     takes in string of a file line and outputs list of strings that are jack tokens
     """
-    def text_to_jack_tkns(self, text: str) -> list[str]:
+    def text_to_jack_tkns(self, text):
         ret = []
 
         curString = ""
@@ -687,7 +687,7 @@ class JackAnalyzer():
 
         # setup output file
         baseName, _ = os.path.splitext(file)
-        outputFileName = baseName + "_test_cmpeng" + ".xml"
+        outputFileName = baseName + "" + ".xml"
         print(f'\nOutput File: {outputFileName}\n')
         
         indent_level = 0

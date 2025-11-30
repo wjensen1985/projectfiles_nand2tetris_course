@@ -27,8 +27,8 @@
 # 	rm -f *.asm
 
 
-SCRIPT = compiler.py
-WRAPPER = Compiler
+SCRIPT = JackAnalyzer.py
+WRAPPER = JackAnalyzer
 
 .PHONY: all clean
 

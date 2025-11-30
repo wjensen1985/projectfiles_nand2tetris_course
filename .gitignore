@@ -3,6 +3,7 @@ VMTranslator
 */test_files*
 *.*:ZoneIdentifier
 Compiler
+JackAnalyzer
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
