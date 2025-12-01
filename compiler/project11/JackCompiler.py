@@ -186,7 +186,7 @@ class CompilationEngine:
         if (type(currentToken) is str) and (currentToken in expected if len(expected) > 0 else True):
             self.f.write(f'{self.indents}<{currentTokenType}> {currentToken if currentToken not in self.specialOutput else self.specialOutput[currentToken]} </{currentTokenType}>\n')
             if currentTokenType == "identifier":
-                self.symbolTable.define(currentToken, 'test_type', 'test_kind')
+                self.symbolTable.define(currentToken, self.symbolTable.curType, self.symbolTable.curKind)
             
         else:
             print(f'syntax error from eat: current token value: "{currentToken}", current token type: "{currentTokenType}"')
@@ -249,9 +249,10 @@ class CompilationEngine:
         self.f.write(f'{self.indents}<classVarDec>\n')
         self.updateIndents(1)
 
-
+        self.symbolTable.curKind = self.tknzr.getCurTokenValue().upper()
         self.eat(["static", "field"])
         # how to handle className ?? -> just eat as is
+        self.symbolTable.curType = self.tknzr.getCurTokenValue()
         self.eat()
         # self.eat(["int", "char", "boolean", "className"])
         # how to handle varName(s) --> just eat as is
@@ -305,7 +306,12 @@ class CompilationEngine:
         self.f.write(f'{self.indents}<parameterList>\n')
         
         self.updateIndents(1)
+        self.symbolTable.curKind = "ARG"
         while self.tknzr.getCurTokenValue() != ')':
+            # kind for all will be arg
+            # type
+            # name
+            # ','
             self.eat()
 
         self.updateIndents(-1)
