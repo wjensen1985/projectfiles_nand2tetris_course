@@ -1,6 +1,7 @@
 import sys
 import os
 import re
+from collections import defaultdict
 
 
 class Tokenizer:
@@ -137,8 +138,6 @@ class Tokenizer:
             return [False, None]
 
 
-
-
 class CompilationEngine:
     """
     Skeleton for the Nand2Tetris CompilationEngine.
@@ -162,8 +161,12 @@ class CompilationEngine:
         self.unaryOpList = {'-', '~'}
         self.subroutineKeywordList = {'constructor', 'function', 'method'}
         self.kwdConstList = {'true', 'false', 'null', 'this'}
+
+        self.symbolTable = SymbolTable()
+        self.VMWriter = VMWriter()
         
         return
+
 
     def updateIndents(self, change):
         self.indent_level += change
@@ -182,7 +185,9 @@ class CompilationEngine:
         # if (currentTokenType is str) and (currentToken in expected if len(expected) > 0 else True):
         if (type(currentToken) is str) and (currentToken in expected if len(expected) > 0 else True):
             self.f.write(f'{self.indents}<{currentTokenType}> {currentToken if currentToken not in self.specialOutput else self.specialOutput[currentToken]} </{currentTokenType}>\n')
-            # print(f'<{currentTokenType}> {currentToken} </{currentTokenType}>')
+            if currentTokenType == "identifier":
+                self.symbolTable.define(currentToken, 'test_type', 'test_kind')
+            
         else:
             print(f'syntax error from eat: current token value: "{currentToken}", current token type: "{currentTokenType}"')
             print(expected)
@@ -226,6 +231,8 @@ class CompilationEngine:
         self.updateIndents(-1)
 
         self.f.write(f'{self.indents}</class>\n')
+
+        print(self.symbolTable.classTable)
 
         return
 
@@ -687,41 +694,144 @@ class JackAnalyzer():
 
         # setup output file
         baseName, _ = os.path.splitext(file)
-        outputFileName = baseName + "" + ".xml"
+        outputFileName = baseName + "_test" + ".xml"
         print(f'\nOutput File: {outputFileName}\n')
         
         indent_level = 0
         with open(outputFileName, "w") as f:
             self.compilation_engine = CompilationEngine(self.tokenizer, indent_level, f)
-            # line = f'<tokens>\n'
-            # f.write(line)
             
             self.compilation_engine.compileClass()
 
-            # line = f'</tokens>\n'
-            # f.write(line)
 
+class SymbolTable():
+    def __init__(self):
+        """
+        key: "name"  values: type, kind, # of kind
+        sub dict with count of kind?
+        kind: static, field, argument, var
+        """
+        self.classTable = {}
+        self.classTableKindCount = defaultdict(int)
+        self.subroutineTable = {}
+        self.subroutineTableKindCount = defaultdict(int)
+
+        self.inSubroutine = False
+
+        self.curType = None
+        self.curKind = None
+
+        return
+    
+
+    def define(self, name, type, kind):
+        """
+        adds new variable to symbol table
         
-        # single file -- no compilation engine
+        :param self: current symbol table object
+        :param name: new variabel name
+        :param type: new variable's type
+        :param kind: new variable's kind (static, field, argument, var)
+        :param isSubRoutineVar: boolean if new var should be added to subroutine or class table
+        """
 
-        # print(f'\nTranslating single file: {self.filesList[0]}\n')
-        # tokenizer = Tokenizer(self.filesList[0])
+        if self.inSubroutine:
+            # add to subroutine table
+            self.subroutineTableKindCount[kind] += 1
+            count = self.subroutineTableKindCount[kind]
+            self.subroutineTable[name] = {"type": type, "kind": kind, "index": count}
+        else:
+            # add to class table
+            self.classTableKindCount[kind] += 1
+            count = self.classTableKindCount[kind]
+            self.classTable[name] = {"type": type, "kind": kind, "index": count}
 
-        # baseName, _ = os.path.splitext(self.filesList[0])
-        # outputFileName = baseName + "_test" + ".xml"
-        # print(f'\nOutput File: {outputFileName}\n')
+        return
 
-        # with open(outputFileName, "w") as f:
-        #     line = f'<tokens>\n'
-        #     f.write(line)
-        #     while tokenizer.hasMoreTokens():
-        #         token = tokenizer.getCurTokenValue()
-        #         tokenType = tokenizer.getCurTokenType()
-        #         line = f'<{tokenType}> {self.specialOutput[token] if token in self.specialOutput else token} </{tokenType}>\n'
-        #         f.write(line)
-        #         tokenizer.advance()
-        #     line = f'</tokens>\n'
-        #     f.write(line)
+
+    def varCount(self, kind):
+        if self.inSubroutine:
+            return self.subroutineTableKindCount[kind]
+        else:
+            return self.classTableKindCount[kind]
+    
+
+    def kindOf(self, name):
+        if self.inSubroutine:
+            return self.subroutineTable[name]["kind"] if name in self.subroutineTable else None
+        else:
+            return self.classTable[name]["kind"] if name in self.classTable else None
+
+
+    def typeOf(self, name):
+        if self.inSubroutine:
+            return self.subroutineTable[name]["type"]
+        else:
+            return self.classTable[name]["type"]
+
+
+    def indexOf(self, name):
+        if self.inSubroutine:
+            return self.subroutineTable[name]["index"]
+        else:
+            return self.classTable[name]["index"]
+
+
+class VMWriter():
+    def __init__(self):
+
+        return
+
+    # accessing a value from variable or pushing value to stack for operation
+    def writePush(self, segment, index):
+        
+
+        return
+
+    # taking value from stack and putting to variable, assigning result to var from stack
+    def writePop(self, segment, index):
+
+        return
+    
+
+    def writeArithmetic(self, command):
+
+        return
+
+
+    def writeLabel(self, label):
+
+        return
+
+
+    def writeGoto(self, label):
+
+        return
+
+
+    def writeIf(self, label):
+
+        return
+    
+
+    def writeCall(self, name, nArgs):
+
+        return
+    
+
+    def writeFunction(self, name, nArgs):
+
+        return
+
+
+    def writeReturn(self):
+
+        return
+    
+
+    def close(self):
+
+        return
 
 
 def main(files):
