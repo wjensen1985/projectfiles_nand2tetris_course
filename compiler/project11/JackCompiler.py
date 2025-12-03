@@ -162,7 +162,10 @@ class CompilationEngine:
         self.subroutineKeywordList = {'constructor', 'function', 'method'}
         self.kwdConstList = {'true', 'false', 'null', 'this'}
 
-        self.symbolTable = SymbolTable()
+        self.classSymbolTable = SymbolTable()
+        self.subroutineSymbolTable = SymbolTable()
+        self.inSubroutine = False
+
         self.VMWriter = VMWriter()
         
         return
@@ -179,14 +182,35 @@ class CompilationEngine:
     """
     
     """
-    def eat(self, expected=[]):
+    def eat(self, expected=[], skip_st_def=False):
         currentToken = self.tknzr.getCurTokenValue()
         currentTokenType = self.tknzr.getCurTokenType()
         # if (currentTokenType is str) and (currentToken in expected if len(expected) > 0 else True):
         if (type(currentToken) is str) and (currentToken in expected if len(expected) > 0 else True):
-            self.f.write(f'{self.indents}<{currentTokenType}> {currentToken if currentToken not in self.specialOutput else self.specialOutput[currentToken]} </{currentTokenType}>\n')
             if currentTokenType == "identifier":
-                self.symbolTable.define(currentToken, self.symbolTable.curType, self.symbolTable.curKind)
+                if (self.inSubroutine) and (currentToken not in self.subroutineSymbolTable.scopeTable) and (currentToken not in self.classSymbolTable.scopeTable) and (not skip_st_def):
+                    # check for curtype again?
+                    self.subroutineSymbolTable.define(currentToken, self.subroutineSymbolTable.curType, self.subroutineSymbolTable.curKind)
+                if (not self.inSubroutine) and (currentToken not in self.classSymbolTable.scopeTable) and (not skip_st_def):
+                    self.classSymbolTable.define(currentToken, self.classSymbolTable.curType, self.classSymbolTable.curKind)
+                    # if currentToken != self.classSymbolTable.curType:
+                    #     self.classSymbolTable.define(currentToken, self.classSymbolTable.curType, self.classSymbolTable.curKind)
+
+                # xml tag info for id in symbol table
+                if self.inSubroutine:
+                    if currentToken in self.subroutineSymbolTable.scopeTable:
+                        st_info = [self.subroutineSymbolTable.typeOf(currentToken), self.subroutineSymbolTable.kindOf(currentToken), self.subroutineSymbolTable.indexOf(currentToken)]  if currentToken in self.subroutineSymbolTable.scopeTable else None
+                    elif currentToken in self.classSymbolTable.scopeTable:
+                        st_info = [self.classSymbolTable.typeOf(currentToken), self.classSymbolTable.kindOf(currentToken), self.classSymbolTable.indexOf(currentToken)]  if currentToken in self.classSymbolTable.scopeTable else None
+                    else:
+                        st_info = None
+                else:
+                    st_info = [self.classSymbolTable.typeOf(currentToken), self.classSymbolTable.kindOf(currentToken), self.classSymbolTable.indexOf(currentToken)]  if currentToken in self.classSymbolTable.scopeTable else None
+                self.f.write(f'{self.indents}<{currentTokenType}> {currentToken if currentToken not in self.specialOutput else self.specialOutput[currentToken]}, {st_info} </{currentTokenType}>\n')
+            
+            else:
+                self.f.write(f'{self.indents}<{currentTokenType}> {currentToken if currentToken not in self.specialOutput else self.specialOutput[currentToken]} </{currentTokenType}>\n')
+                
             
         else:
             print(f'syntax error from eat: current token value: "{currentToken}", current token type: "{currentTokenType}"')
@@ -212,27 +236,33 @@ class CompilationEngine:
         self.f.write(f'{self.indents}<class>\n')
 
         self.updateIndents(1)
-        self.eat(["class"])
+        self.eat(expected=["class"])
 
         # how to handle className?? --> indentifier, just eat w/identifier tags?
         # will be handled in eat if nothing passed directly
-        self.eat()
+        self.classSymbolTable.updateScopeName(self.tknzr.getCurTokenValue())
+        self.eat(skip_st_def=True)
 
-        self.eat(["{"])
+        self.eat(expected=["{"])
 
         # need checks for how many (if any) of classVarDec & subroutineDec
         while self.tknzr.getCurTokenValue() in ["static", "field"]:
             self.compileClassVarDec()
 
+        self.inSubroutine = True
         while self.tknzr.hasMoreTokens() and self.tknzr.getCurTokenValue() in self.subroutineKeywordList:
             self.compileSubroutineDec()
+            print(f'showing symbol table for subroutine: "{self.subroutineSymbolTable.scopeName}"')
+            print(f'{self.subroutineSymbolTable.scopeTable}\n')
+            self.subroutineSymbolTable.reset()
 
-        self.eat(["}"])
+        self.eat(expected=["}"])
         self.updateIndents(-1)
 
         self.f.write(f'{self.indents}</class>\n')
 
-        print(self.symbolTable.classTable)
+        print(f'showing symbol table for class: "{self.classSymbolTable.scopeName}"')
+        print(self.classSymbolTable.scopeTable)
 
         return
 
@@ -249,17 +279,17 @@ class CompilationEngine:
         self.f.write(f'{self.indents}<classVarDec>\n')
         self.updateIndents(1)
 
-        self.symbolTable.curKind = self.tknzr.getCurTokenValue().upper()
-        self.eat(["static", "field"])
+        self.classSymbolTable.curKind = self.tknzr.getCurTokenValue()
+        self.eat(expected=["static", "field"], skip_st_def=True)
         # how to handle className ?? -> just eat as is
-        self.symbolTable.curType = self.tknzr.getCurTokenValue()
-        self.eat()
-        # self.eat(["int", "char", "boolean", "className"])
+        self.classSymbolTable.curType = self.tknzr.getCurTokenValue()
+        self.eat(skip_st_def=True)
+        # self.eat(expected=["int", "char", "boolean", "className"])
         # how to handle varName(s) --> just eat as is
         while self.tknzr.getCurTokenValue() != ";":
             self.eat()
         
-        self.eat([";"])
+        self.eat(expected=[";"])
 
         self.updateIndents(-1)
         self.f.write(f'{self.indents}</classVarDec>\n')
@@ -278,15 +308,20 @@ class CompilationEngine:
         self.f.write(f'{self.indents}<subroutineDec>\n')
         self.updateIndents(1)
 
-
-        self.eat(["constructor", "function", "method"])
-        self.eat()
-        self.eat()
-        self.eat(['('])
-
-        self.compileParameterList()
+        # subroutine type:
+        self.eat(expected=["constructor", "function", "method"])
         
-        self.eat([')'])
+        # return type
+        self.eat(skip_st_def=True)
+        
+        # subroutine name
+        self.subroutineSymbolTable.updateScopeName(self.tknzr.getCurTokenValue())
+        self.eat(skip_st_def=True)
+        
+        # subroutine arguments
+        self.eat(expected=['('])
+        self.compileParameterList()
+        self.eat(expected=[')'])
 
         self.compileSubroutineBody()
         
@@ -306,13 +341,16 @@ class CompilationEngine:
         self.f.write(f'{self.indents}<parameterList>\n')
         
         self.updateIndents(1)
-        self.symbolTable.curKind = "ARG"
+
+        self.subroutineSymbolTable.curKind = "argument"
         while self.tknzr.getCurTokenValue() != ')':
             # kind for all will be arg
-            # type
-            # name
-            # ','
+            # type name ','? until token == ')'
+            self.subroutineSymbolTable.curType = self.tknzr.getCurTokenValue()
+            self.eat(skip_st_def=True)
             self.eat()
+            if self.tknzr.getCurTokenValue() != ')':
+                self.eat(expected=[','])
 
         self.updateIndents(-1)
         self.f.write(f'{self.indents}</parameterList>\n')
@@ -331,14 +369,14 @@ class CompilationEngine:
         self.f.write(f'{self.indents}<subroutineBody>\n')
         self.updateIndents(1)
 
-        self.eat(["{"])
+        self.eat(expected=["{"])
         
         while self.tknzr.getCurTokenValue() in ["static", "field", "var"]:
             self.compileVarDec()
 
         self.compileStatements()
         
-        self.eat(["}"])
+        self.eat(expected=["}"])
 
         self.updateIndents(-1)
         self.f.write(f'{self.indents}</subroutineBody>\n')
@@ -356,12 +394,18 @@ class CompilationEngine:
         self.f.write(f'{self.indents}<varDec>\n')
         self.updateIndents(1)
 
-        self.eat(["var"])
+        # var
+        self.eat(expected=["var"])
         
+        # type
+        self.subroutineSymbolTable.curType = self.tknzr.getCurTokenValue()
+        self.eat(skip_st_def=True)
+        
+        self.subroutineSymbolTable.curKind = "local"
         while self.tknzr.getCurTokenValue() != ';':
             self.eat()
 
-        self.eat([";"])
+        self.eat(expected=[";"])
 
         self.updateIndents(-1)
         self.f.write(f'{self.indents}</varDec>\n')
@@ -426,7 +470,7 @@ class CompilationEngine:
         self.f.write(f'{self.indents}<letStatement>\n')
         self.updateIndents(1)
 
-        self.eat(["let"])
+        self.eat(expected=["let"])
         self.eat()
 
         if self.tknzr.getCurTokenValue() == '[':
@@ -434,11 +478,11 @@ class CompilationEngine:
             self.compileExpression()
             self.eat()
         
-        self.eat(["="])
+        self.eat(expected=["="])
         
         self.compileExpression()
         
-        self.eat([";"])
+        self.eat(expected=[";"])
 
         self.updateIndents(-1)
         self.f.write(f'{self.indents}</letStatement>\n')
@@ -457,20 +501,20 @@ class CompilationEngine:
         self.f.write(f'{self.indents}<ifStatement>\n')
         self.updateIndents(1)
 
-        self.eat(["if"])
-        self.eat(["("])
+        self.eat(expected=["if"])
+        self.eat(expected=["("])
         self.compileExpression()
-        self.eat([")"])
-        self.eat(["{"])
+        self.eat(expected=[")"])
+        self.eat(expected=["{"])
         self.compileStatements()
-        self.eat(["}"])
+        self.eat(expected=["}"])
 
         # check for else statement
         if self.tknzr.getCurTokenValue() == "else":
-            self.eat(["else"])
-            self.eat(["{"])
+            self.eat(expected=["else"])
+            self.eat(expected=["{"])
             self.compileStatements()
-            self.eat(["}"])
+            self.eat(expected=["}"])
 
         self.updateIndents(-1)
         self.f.write(f'{self.indents}</ifStatement>\n')
@@ -487,13 +531,13 @@ class CompilationEngine:
         self.f.write(f'{self.indents}<whileStatement>\n')
         self.updateIndents(1)
         
-        self.eat(["while"])
-        self.eat(["("])
+        self.eat(expected=["while"])
+        self.eat(expected=["("])
         self.compileExpression()
-        self.eat([")"])
-        self.eat(["{"])
+        self.eat(expected=[")"])
+        self.eat(expected=["{"])
         self.compileStatements()
-        self.eat(["}"])
+        self.eat(expected=["}"])
 
         self.updateIndents(-1)
         self.f.write(f'{self.indents}</whileStatement>\n')
@@ -512,11 +556,11 @@ class CompilationEngine:
         self.f.write(f'{self.indents}<doStatement>\n')
         self.updateIndents(1)
 
-        self.eat(["do"])
+        self.eat(expected=["do"])
 
         self.compileSubroutineCall()
         
-        self.eat([";"])
+        self.eat(expected=[";"])
         
         self.updateIndents(-1)
         self.f.write(f'{self.indents}</doStatement>\n')
@@ -535,12 +579,12 @@ class CompilationEngine:
         self.f.write(f'{self.indents}<returnStatement>\n')
         self.updateIndents(1)
 
-        self.eat(["return"])
+        self.eat(expected=["return"])
 
         if self.tknzr.getCurTokenValue() != ';':
             self.compileExpression()
 
-        self.eat([";"])
+        self.eat(expected=[";"])
 
         self.updateIndents(-1)
         self.f.write(f'{self.indents}</returnStatement>\n')
@@ -598,9 +642,9 @@ class CompilationEngine:
         next, nextType = nx
         
         if cur == '(':
-            self.eat(['('])
+            self.eat(expected=['('])
             self.compileExpression()
-            self.eat([')'])
+            self.eat(expected=[')'])
         elif hasNext and next == '[':
             self.eat()
             self.eat('[')
@@ -614,8 +658,8 @@ class CompilationEngine:
         elif hasNext and next == '(':
             self.compileSubroutineCall()
         elif hasNext and next == '.':
-            self.eat()
-            self.eat(['.'])
+            self.eat(skip_st_def=True)
+            self.eat(expected=['.'])
             self.compileSubroutineCall()
         else:
             # print(f'next: {next}, cur: {self.tknzr.getCurTokenValue()}')
@@ -639,7 +683,7 @@ class CompilationEngine:
         # while self.tknzr.getCurTokenValue() != ')':
         #     self.compileExpression()
         #     if self.tknzr.getCurTokenValue() != ')':
-        #         self.eat([','])
+        #         self.eat(expected=[','])
 
         # is there an expression? if not exit w/o expression tags
         # if cur token is an a term (then is expression else skip)
@@ -648,7 +692,7 @@ class CompilationEngine:
             # is term, else skip 
             self.compileExpression()
             if self.tknzr.getCurTokenValue() == ',':
-                self.eat([','])
+                self.eat(expected=[','])
             else:
                 break
 
@@ -664,17 +708,18 @@ class CompilationEngine:
     def compileSubroutineCall(self):
         # subroutineName '(' expressionList ')' | (className | varName) '.' subroutineName '(' expressionList ')'
 
-        self.eat()
+        # eat subroutine name w/o adding to symbol table
+        self.eat(skip_st_def=True)
 
         if self.tknzr.getCurTokenValue() == '.':
-            self.eat(['.'])
-            self.eat()
+            self.eat(expected=['.'])
+            self.eat(skip_st_def=True)
 
-        self.eat(['('])
+        self.eat(expected=['('])
 
         self.compileExpressionList()
 
-        self.eat([')'])
+        self.eat(expected=[')'])
 
         return
 
@@ -717,18 +762,25 @@ class SymbolTable():
         sub dict with count of kind?
         kind: static, field, argument, var
         """
-        self.classTable = {}
-        self.classTableKindCount = defaultdict(int)
-        self.subroutineTable = {}
-        self.subroutineTableKindCount = defaultdict(int)
 
-        self.inSubroutine = False
+        self.scopeName = None
 
+        self.scopeTable = {}
+        self.scopeTableKindCount = defaultdict(int)
+        
         self.curType = None
         self.curKind = None
 
         return
     
+    def reset(self):
+        self.scopeTable = {}
+        self.scopeTableKindCount = defaultdict(int)
+
+
+    def updateScopeName(self, scope_name):
+        self.scopeName = scope_name
+
 
     def define(self, name, type, kind):
         """
@@ -740,47 +792,28 @@ class SymbolTable():
         :param kind: new variable's kind (static, field, argument, var)
         :param isSubRoutineVar: boolean if new var should be added to subroutine or class table
         """
-
-        if self.inSubroutine:
-            # add to subroutine table
-            self.subroutineTableKindCount[kind] += 1
-            count = self.subroutineTableKindCount[kind]
-            self.subroutineTable[name] = {"type": type, "kind": kind, "index": count}
-        else:
-            # add to class table
-            self.classTableKindCount[kind] += 1
-            count = self.classTableKindCount[kind]
-            self.classTable[name] = {"type": type, "kind": kind, "index": count}
+        if name != self.scopeName:        
+            count = self.scopeTableKindCount[kind]
+            self.scopeTable[name] = {"type": type, "kind": kind, "index": count}
+            self.scopeTableKindCount[kind] += 1
 
         return
 
 
     def varCount(self, kind):
-        if self.inSubroutine:
-            return self.subroutineTableKindCount[kind]
-        else:
-            return self.classTableKindCount[kind]
+        return self.scopeTableKindCount[kind]
     
 
     def kindOf(self, name):
-        if self.inSubroutine:
-            return self.subroutineTable[name]["kind"] if name in self.subroutineTable else None
-        else:
-            return self.classTable[name]["kind"] if name in self.classTable else None
+        return self.scopeTable[name]["kind"] if name in self.scopeTable else None
 
 
     def typeOf(self, name):
-        if self.inSubroutine:
-            return self.subroutineTable[name]["type"]
-        else:
-            return self.classTable[name]["type"]
+        return self.scopeTable[name]["type"]
 
 
     def indexOf(self, name):
-        if self.inSubroutine:
-            return self.subroutineTable[name]["index"]
-        else:
-            return self.classTable[name]["index"]
+        return self.scopeTable[name]["index"]
 
 
 class VMWriter():
