@@ -1,0 +1,46 @@
+class Math{
+
+    function void init(){
+        
+    }
+
+
+    function int abs(int x){
+        
+    }
+
+
+    function int multiply(int x, int y){
+        
+    }
+
+
+    function int divide(int x, int y){
+        
+    }
+
+
+    function int min(int x, int y){
+        if (x > y){
+            return y;
+        } else {
+            return x;
+        }
+    }
+
+
+    function int max(int x, int y){
+        if (x < y){
+            return y;
+        } else {
+            return x;
+        }
+        
+    }
+
+
+    function int sqrt(int x){
+        
+    }
+
+}

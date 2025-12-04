@@ -151,10 +151,11 @@ class CompilationEngine:
     Creates a new compilation engine with the given input and output streams.
     Typically: keep references to the tokenizer and the writer.
     """
-    def __init__(self, tknzr, indent_level, file):
+    def __init__(self, tknzr, indent_level, xmlFile, vmFile):
         self.tknzr = tknzr
         self.indent_level = indent_level
-        self.f = file
+        self.f = xmlFile
+        self.vmFile = vmFile
         self.specialOutput = {'<': '&lt;', '>': '&gt;', '"': '&quot;', '&': '&amp;'}
         self.indents = ""
         self.opList = {'+', '-', '*', '/', '&', '|', '<', '>', '='}
@@ -166,7 +167,7 @@ class CompilationEngine:
         self.subroutineSymbolTable = SymbolTable()
         self.inSubroutine = False
 
-        self.VMWriter = VMWriter()
+        self.VMWriter = VMWriter(self.vmFile)
         
         return
 
@@ -207,7 +208,13 @@ class CompilationEngine:
                 else:
                     st_info = [self.classSymbolTable.typeOf(currentToken), self.classSymbolTable.kindOf(currentToken), self.classSymbolTable.indexOf(currentToken)]  if currentToken in self.classSymbolTable.scopeTable else None
                 self.f.write(f'{self.indents}<{currentTokenType}> {currentToken if currentToken not in self.specialOutput else self.specialOutput[currentToken]}, {st_info} </{currentTokenType}>\n')
-            
+                
+                # term write for const? -> just push to stack?
+                # st_info = [type, king(segment), index]
+                # if st_info:
+                #     self.VMWriter.f.write(f'{currentToken}\n')
+                #     self.VMWriter.writePush(st_info[1], st_info[2])
+
             else:
                 self.f.write(f'{self.indents}<{currentTokenType}> {currentToken if currentToken not in self.specialOutput else self.specialOutput[currentToken]} </{currentTokenType}>\n')
                 
@@ -471,8 +478,10 @@ class CompilationEngine:
         self.updateIndents(1)
 
         self.eat(expected=["let"])
-        self.eat()
 
+        # this is where you pop the expression result to:
+        dest = self.tknzr.getCurTokenValue()
+        self.eat()
         if self.tknzr.getCurTokenValue() == '[':
             self.eat()
             self.compileExpression()
@@ -480,7 +489,20 @@ class CompilationEngine:
         
         self.eat(expected=["="])
         
+        # this should result in value on top of stack that will be popped to varName you are assigning
         self.compileExpression()
+
+        if dest in self.subroutineSymbolTable.scopeTable:
+            st_info = [self.subroutineSymbolTable.typeOf(dest), self.subroutineSymbolTable.kindOf(dest), self.subroutineSymbolTable.indexOf(dest)]  if dest in self.subroutineSymbolTable.scopeTable else None
+        elif dest in self.classSymbolTable.scopeTable:
+            st_info = [self.classSymbolTable.typeOf(dest), self.classSymbolTable.kindOf(dest), self.classSymbolTable.indexOf(dest)]  if dest in self.classSymbolTable.scopeTable else None
+        else:
+            st_info = None
+        if st_info:
+            # self.VMWriter.f.write(f'{dest}\n')
+            self.VMWriter.writePop(st_info[1], st_info[2])
+        else:
+            print("let statement assignment error, no symnbol table info")
         
         self.eat(expected=[";"])
 
@@ -581,9 +603,14 @@ class CompilationEngine:
 
         self.eat(expected=["return"])
 
+        # if have expression here, need to push result of that to stack (so it can be returned)
+        # if no value/expression --> push constant 0, then return that
         if self.tknzr.getCurTokenValue() != ';':
             self.compileExpression()
+        else:
+            self.VMWriter.writePush('constant', 0)
 
+        self.VMWriter.writeReturn()
         self.eat(expected=[";"])
 
         self.updateIndents(-1)
@@ -610,8 +637,10 @@ class CompilationEngine:
         self.compileTerm()
 
         while (self.tknzr.getCurTokenType() == 'symbol') and (self.tknzr.getCurTokenValue() in self.opList):
+            op = self.tknzr.getCurTokenValue()
             self.eat()
             self.compileTerm()
+            self.VMWriter.writeArithmetic(op)
 
         self.updateIndents(-1)
         self.f.write(f'{self.indents}</expression>\n')
@@ -663,6 +692,21 @@ class CompilationEngine:
             self.compileSubroutineCall()
         else:
             # print(f'next: {next}, cur: {self.tknzr.getCurTokenValue()}')
+            currentToken = cur
+            if currentToken in self.subroutineSymbolTable.scopeTable:
+                st_info = [self.subroutineSymbolTable.typeOf(currentToken), self.subroutineSymbolTable.kindOf(currentToken), self.subroutineSymbolTable.indexOf(currentToken)]  if currentToken in self.subroutineSymbolTable.scopeTable else None
+            elif currentToken in self.classSymbolTable.scopeTable:
+                st_info = [self.classSymbolTable.typeOf(currentToken), self.classSymbolTable.kindOf(currentToken), self.classSymbolTable.indexOf(currentToken)]  if currentToken in self.classSymbolTable.scopeTable else None
+            else:
+                st_info = None
+            if st_info:
+                # self.VMWriter.f.write(f'{cur}\n')
+                self.VMWriter.writePush(st_info[1], st_info[2])
+            else:
+                # either string/value const -> can just push value directly to stack -> how?
+                # self.VMWriter.f.write(f'{cur}\n')
+                self.VMWriter.writePush('constant', cur)
+
             self.eat()
         
         self.updateIndents(-1)
@@ -746,11 +790,12 @@ class JackAnalyzer():
         # setup output file
         baseName, _ = os.path.splitext(file)
         outputFileName = baseName + "_test" + ".xml"
-        print(f'\nOutput File: {outputFileName}\n')
+        vmOutputFileName = baseName + ".vm"
+        print(f'\nXML Output File: {outputFileName}\nVM OutputFile: {vmOutputFileName}\n')
         
         indent_level = 0
-        with open(outputFileName, "w") as f:
-            self.compilation_engine = CompilationEngine(self.tokenizer, indent_level, f)
+        with open(outputFileName, "w") as f, open(vmOutputFileName, "w") as f_vm:
+            self.compilation_engine = CompilationEngine(self.tokenizer, indent_level, f, f_vm)
             
             self.compilation_engine.compileClass()
 
@@ -817,24 +862,42 @@ class SymbolTable():
 
 
 class VMWriter():
-    def __init__(self):
+    def __init__(self, file):
+        self.f = file
+
+        # how to diff sub vs. neg???
+        self.command_lookup = {"+": "add", "-": "sub", ">": "gt", "<": "lt", "/": "call Math.divide 2"}
 
         return
 
     # accessing a value from variable or pushing value to stack for operation
     def writePush(self, segment, index):
-        
+        vm_code = [f'push {segment} {index}']        
+        # print(vm_code)
+        for line in vm_code:
+            output = f'{line}\n'
+            self.f.write(str(output))
 
         return
 
     # taking value from stack and putting to variable, assigning result to var from stack
     def writePop(self, segment, index):
-
+        vm_code = [f'pop {segment} {index}']        
+        # print(vm_code)
+        for line in vm_code:
+            output = f'{line}\n'
+            self.f.write(str(output))
+        
         return
     
 
     def writeArithmetic(self, command):
-
+        error = "arithmetic lookup error"
+        vm_code = [f'{self.command_lookup[command] if command in self.command_lookup else error}']        
+        # print(vm_code)
+        for line in vm_code:
+            output = f'{line}\n'
+            self.f.write(str(output))
         return
 
 
@@ -864,6 +927,11 @@ class VMWriter():
 
 
     def writeReturn(self):
+        vm_code = ['return']
+        # print(vm_code)
+        for line in vm_code:
+            output = f'{line}\n'
+            self.f.write(str(output))
 
         return
     

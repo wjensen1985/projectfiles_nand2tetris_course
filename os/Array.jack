@@ -1,0 +1,12 @@
+class Array {
+
+    function Array new(int size){
+
+    }
+
+
+    method void dispose(){
+
+    }
+
+}
