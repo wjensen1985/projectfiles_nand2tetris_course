@@ -502,7 +502,7 @@ class CompilationEngine:
             # self.VMWriter.f.write(f'{dest}\n')
             self.VMWriter.writePop(st_info[1], st_info[2])
         else:
-            print("let statement assignment error, no symnbol table info")
+            print("let statement assignment error, no symbol table info")
         
         self.eat(expected=[";"])
 
@@ -687,8 +687,8 @@ class CompilationEngine:
         elif hasNext and next == '(':
             self.compileSubroutineCall()
         elif hasNext and next == '.':
-            self.eat(skip_st_def=True)
-            self.eat(expected=['.'])
+            # self.eat(skip_st_def=True)
+            # self.eat(expected=['.'])
             self.compileSubroutineCall()
         else:
             # print(f'next: {next}, cur: {self.tknzr.getCurTokenValue()}')
@@ -732,9 +732,11 @@ class CompilationEngine:
         # is there an expression? if not exit w/o expression tags
         # if cur token is an a term (then is expression else skip)
         # term: identifier, unaryOp, '('
+        count = 0
         while (self.tknzr.getCurTokenType() in ['identifier', 'stringConstant', 'integerConstant']) or (self.tknzr.getCurTokenValue() in self.kwdConstList) or (self.tknzr.getCurTokenValue() in self.unaryOpList) or (self.tknzr.getCurTokenValue() == '('):
             # is term, else skip 
             self.compileExpression()
+            count += 1
             if self.tknzr.getCurTokenValue() == ',':
                 self.eat(expected=[','])
             else:
@@ -743,7 +745,7 @@ class CompilationEngine:
         self.updateIndents(-1)
         self.f.write(f'{self.indents}</expressionList>\n')
 
-        return
+        return count
     
 
     """
@@ -753,17 +755,25 @@ class CompilationEngine:
         # subroutineName '(' expressionList ')' | (className | varName) '.' subroutineName '(' expressionList ')'
 
         # eat subroutine name w/o adding to symbol table
+        name = self.tknzr.getCurTokenValue()
         self.eat(skip_st_def=True)
 
         if self.tknzr.getCurTokenValue() == '.':
             self.eat(expected=['.'])
+            name = name + "."
+            name = name + self.tknzr.getCurTokenValue()
             self.eat(skip_st_def=True)
 
         self.eat(expected=['('])
 
-        self.compileExpressionList()
+        # need to pull nArgs from here
+        nArgs = self.compileExpressionList()
 
         self.eat(expected=[')'])
+
+        # for testing:
+        # nArgs = 1
+        self.VMWriter.writeCall(name, nArgs)
 
         return
 
@@ -866,7 +876,7 @@ class VMWriter():
         self.f = file
 
         # how to diff sub vs. neg???
-        self.command_lookup = {"+": "add", "-": "sub", ">": "gt", "<": "lt", "/": "call Math.divide 2"}
+        self.command_lookup = {"+": "add", "-": "sub", ">": "gt", "<": "lt", "/": "call Math.divide 2", "*": "call Math.multiply 2"}
 
         return
 
@@ -917,7 +927,12 @@ class VMWriter():
     
 
     def writeCall(self, name, nArgs):
-
+        error = "write call error"
+        vm_code = [f'call {name} {nArgs}']        
+        # print(vm_code)
+        for line in vm_code:
+            output = f'{line}\n'
+            self.f.write(str(output))
         return
     
 
