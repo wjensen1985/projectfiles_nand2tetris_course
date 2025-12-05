@@ -288,7 +288,8 @@ class CompilationEngine:
         self.f.write(f'{self.indents}<classVarDec>\n')
         self.updateIndents(1)
 
-        self.classSymbolTable.curKind = self.tknzr.getCurTokenValue()
+        cur = self.tknzr.getCurTokenValue()
+        self.classSymbolTable.curKind = cur if cur == "static" else "this"
         self.eat(expected=["static", "field"], skip_st_def=True)
         # how to handle className ?? -> just eat as is
         self.classSymbolTable.curType = self.tknzr.getCurTokenValue()
@@ -842,7 +843,23 @@ class CompilationEngine:
         # subroutineName '(' expressionList ')' | (className | varName) '.' subroutineName '(' expressionList ')'
 
         # eat subroutine name w/o adding to symbol table
+        # if in symbol table, need to override to type.funcName nArgs ??
         name = self.tknzr.getCurTokenValue()
+        # if name == self.classSymbolTable.scopeName:
+        #     pass
+        # else:
+        #     if name == self.subroutineSymbolTable.scopeName:
+        #         pass
+        #     elif name in self.subroutineSymbolTable.scopeTable:
+        #         name = self.subroutineSymbolTable.typeOf(name)
+
+        #  and name != self.subroutineSymbolTable.scopeName
+        if name != self.classSymbolTable.scopeName:
+            if name in self.classSymbolTable.scopeTable:
+                name = self.classSymbolTable.typeOf(name)
+            if name in self.subroutineSymbolTable.scopeTable:
+                name = self.subroutineSymbolTable.typeOf(name)
+
         self.eat(skip_st_def=True)
 
         if self.tknzr.getCurTokenValue() == '.':
