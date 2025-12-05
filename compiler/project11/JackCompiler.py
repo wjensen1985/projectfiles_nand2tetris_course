@@ -168,6 +168,8 @@ class CompilationEngine:
         self.inSubroutine = False
 
         self.VMWriter = VMWriter(self.vmFile)
+
+        self.label_count = 1
         
         return
 
@@ -322,7 +324,8 @@ class CompilationEngine:
         self.eat(skip_st_def=True)
         
         # subroutine name
-        self.subroutineSymbolTable.updateScopeName(self.tknzr.getCurTokenValue())
+        funcName = self.tknzr.getCurTokenValue()
+        self.subroutineSymbolTable.updateScopeName(funcName)
         self.eat(skip_st_def=True)
         
         # subroutine arguments
@@ -380,6 +383,11 @@ class CompilationEngine:
         
         while self.tknzr.getCurTokenValue() in ["static", "field", "var"]:
             self.compileVarDec()
+        
+        # after compiling var decs (get count) -> write function dec. vm code "function funcName nLocalVars"
+        # chech symbol table for count of type "local"
+        nLocalVars = self.subroutineSymbolTable.varCount("local")
+        self.VMWriter.writeFunction(f'{self.classSymbolTable.scopeName}.{self.subroutineSymbolTable.scopeName}', nLocalVars)
 
         self.compileStatements()
         
@@ -403,7 +411,7 @@ class CompilationEngine:
 
         # var
         self.eat(expected=["var"])
-        
+
         # type
         self.subroutineSymbolTable.curType = self.tknzr.getCurTokenValue()
         self.eat(skip_st_def=True)
@@ -484,6 +492,7 @@ class CompilationEngine:
         self.eat()
         if self.tknzr.getCurTokenValue() == '[':
             self.eat()
+            # destination idx from this (if exists)
             self.compileExpression()
             self.eat()
         
@@ -492,6 +501,7 @@ class CompilationEngine:
         # this should result in value on top of stack that will be popped to varName you are assigning
         self.compileExpression()
 
+        # value on top of stack, to be assigned to the "dest" from varName ('[' expression ']')?
         if dest in self.subroutineSymbolTable.scopeTable:
             st_info = [self.subroutineSymbolTable.typeOf(dest), self.subroutineSymbolTable.kindOf(dest), self.subroutineSymbolTable.indexOf(dest)]  if dest in self.subroutineSymbolTable.scopeTable else None
         elif dest in self.classSymbolTable.scopeTable:
@@ -523,20 +533,58 @@ class CompilationEngine:
         self.f.write(f'{self.indents}<ifStatement>\n')
         self.updateIndents(1)
 
+        """
+        VM flow:
+        1. compile exp
+        2. "not"
+        3. label L1 (unique) -> if-goto L1
+        4. if true statements
+        5. label L2 (unique) -> goto L2
+        6. "label L1"
+        7. (else statements)?
+        8 "label L2"
+        """
+
         self.eat(expected=["if"])
         self.eat(expected=["("])
+        
+        # 1. compile exp
         self.compileExpression()
+        
+        # 2. "not"
+        self.VMWriter.writeUnaryOp("~")
+        
+        # 3. label L1 (unique) -> if-goto L1
+        label1 = "L" + str(self.label_count)
+        self.label_count += 1
+        self.VMWriter.writeIfgoto(label1)
+        
         self.eat(expected=[")"])
         self.eat(expected=["{"])
+        
+        # 4. if true statements
         self.compileStatements()
         self.eat(expected=["}"])
 
+        # 5. label L2 (unique) -> goto L2
+        label2 = "L" + str(self.label_count)
+        self.label_count += 1
+        self.VMWriter.writeGoto(label2)
+
+        # 6. "label L1"
+        self.VMWriter.writeLabel(label1)
+
+
+        # 7. (else statements)?
         # check for else statement
         if self.tknzr.getCurTokenValue() == "else":
             self.eat(expected=["else"])
             self.eat(expected=["{"])
             self.compileStatements()
             self.eat(expected=["}"])
+        
+        # 8 "label L2"
+        self.VMWriter.writeLabel(label2)
 
         self.updateIndents(-1)
         self.f.write(f'{self.indents}</ifStatement>\n')
@@ -552,14 +600,50 @@ class CompilationEngine:
 
         self.f.write(f'{self.indents}<whileStatement>\n')
         self.updateIndents(1)
+
+        """
+        VM flow:
+        1. label1
+        2. expression
+        3. not
+        4. if-goto label2
+        5. statements
+        6. goto label1
+        7. label2
+        """
         
+        # 1. label1
+        label1 = "L" + str(self.label_count)
+        self.label_count += 1
+        self.VMWriter.writeLabel(label1)
+
         self.eat(expected=["while"])
         self.eat(expected=["("])
+        
+        # 2. expression
         self.compileExpression()
+
+        # 3. not
+        self.VMWriter.writeUnaryOp("~")
+        
+        # 4. if-goto label2
+        label2 = "L" + str(self.label_count)
+        self.label_count += 1
+        self.VMWriter.writeIfgoto(label2)
+
         self.eat(expected=[")"])
         self.eat(expected=["{"])
+        
+        # 5. statements
         self.compileStatements()
+        
+        # 6. goto label1
+        self.VMWriter.writeGoto(label1)
+        
         self.eat(expected=["}"])
+        
+        # 7. label2
+        self.VMWriter.writeLabel(label2)
 
         self.updateIndents(-1)
         self.f.write(f'{self.indents}</whileStatement>\n')
@@ -682,7 +766,10 @@ class CompilationEngine:
         elif cur in self.unaryOpList:
             self.eat()
             self.compileTerm()
+            # handle unary op
+            self.VMWriter.writeUnaryOp(cur)
         elif cur in self.kwdConstList:
+            self.VMWriter.writeKeyword(cur)
             self.eat()
         elif hasNext and next == '(':
             self.compileSubroutineCall()
@@ -876,8 +963,35 @@ class VMWriter():
         self.f = file
 
         # how to diff sub vs. neg???
-        self.command_lookup = {"+": "add", "-": "sub", ">": "gt", "<": "lt", "/": "call Math.divide 2", "*": "call Math.multiply 2"}
+        self.command_lookup = {"+": "add", "-": "sub", ">": "gt", "<": "lt", "/": "call Math.divide 2", "*": "call Math.multiply 2", "&": "and", "=": "eq"}
+        self.unaryOp_lookup = {"-": "neg", "~": "not"}
+        self.keyword_lookup = {"true": ["push constant 1", "neg"], "false": ["push constant 0"], "null": ["push constant 0"], "this": ["push pointer 0"]}
 
+        self.label_count = 1
+
+        return
+
+
+    def writeKeyword(self, kwd):
+        error = "write keyword error"
+        if kwd in self.keyword_lookup:
+            vm_code = self.keyword_lookup[kwd]
+            for line in vm_code:
+                output = f'{line}\n'
+                self.f.write(str(output))
+        else:
+            output = f'{error}\n'
+            self.f.write(str(output))
+        
+        return
+    
+    def writeUnaryOp(self, op):
+        error = "unary op command lookup error"
+        vm_code = [f'{self.unaryOp_lookup[op] if op in self.unaryOp_lookup else error}']
+        for line in vm_code:
+            output = f'{line}\n'
+            self.f.write(str(output))
+        
         return
 
     # accessing a value from variable or pushing value to stack for operation
@@ -912,16 +1026,43 @@ class VMWriter():
 
 
     def writeLabel(self, label):
+        error = "write label error"
+        vm_code = [f'label {label}']
+        if label:
+            for line in vm_code:
+                output = f'{line}\n'
+                self.f.write(str(output))
+        else:
+            output = f'{error}\n'
+            self.f.write(str(output))
 
         return
 
 
     def writeGoto(self, label):
+        error = "write goto error"
+        vm_code = [f'goto {label}']
+        if label:
+            for line in vm_code:
+                output = f'{line}\n'
+                self.f.write(str(output))
+        else:
+            output = f'{error}\n'
+            self.f.write(str(output))
 
         return
 
 
-    def writeIf(self, label):
+    def writeIfgoto(self, label):
+        error = "write if-goto error"
+        vm_code = [f'if-goto {label}']
+        if label:
+            for line in vm_code:
+                output = f'{line}\n'
+                self.f.write(str(output))
+        else:
+            output = f'{error}\n'
+            self.f.write(str(output))
 
         return
     
@@ -936,7 +1077,12 @@ class VMWriter():
         return
     
 
-    def writeFunction(self, name, nArgs):
+    def writeFunction(self, name, nLocalVars):
+        error = "write function def error"
+        vm_code = [f'function {name} {nLocalVars}']
+        for line in vm_code:
+            output = f'{line}\n'
+            self.f.write(str(output))
 
         return
 
@@ -950,11 +1096,6 @@ class VMWriter():
 
         return
     
-
-    def close(self):
-
-        return
-
 
 def main(files):
     print("\nrunning main")
