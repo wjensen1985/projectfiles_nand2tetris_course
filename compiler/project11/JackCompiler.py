@@ -816,6 +816,7 @@ class CompilationEngine:
             self.compileExpression()
             self.eat(expected=[')'])
         elif hasNext and next == '[':
+            # Arrays:
             # varName '[' expression ']'          
             
             dest = cur
@@ -859,15 +860,10 @@ class CompilationEngine:
             # calling String.new(length):
             # push length to stack
             self.VMWriter.writePush("constant", len(cur))
-            # call String.new constructor (will put address of string object on stack)
+            # call String.new constructor
             self.VMWriter.writeCall("String.new", 1)
-            # save address to temp???
-            self.VMWriter.writePop("temp", 1)
 
             for c in cur:
-                # print(f's.push(ord({ord(c)}))')
-                # put temp string object on stack as first arg for append char
-                self.VMWriter.writePush("temp", 1)
                 # put char value on stack as second arg for append char
                 self.VMWriter.writePush("constant", ord(c))
                 # call append char for current char
