@@ -319,22 +319,28 @@ class CompilationEngine:
         self.updateIndents(1)
 
         # subroutine type:
+        type = self.tknzr.getCurTokenValue()
         self.eat(expected=["constructor", "function", "method"])
         
         # return type
+        # retType = self.tknzr.getCurTokenValue()
         self.eat(skip_st_def=True)
         
         # subroutine name
         funcName = self.tknzr.getCurTokenValue()
         self.subroutineSymbolTable.updateScopeName(funcName)
+        if type == "method":
+            self.subroutineSymbolTable.define("this", self.classSymbolTable.scopeName, "argument")
+
         self.eat(skip_st_def=True)
+        
         
         # subroutine arguments
         self.eat(expected=['('])
         self.compileParameterList()
-        self.eat(expected=[')'])
+        self.eat(expected=[')'])           
 
-        self.compileSubroutineBody()
+        self.compileSubroutineBody(type)
         
         self.updateIndents(-1)
         self.f.write(f'{self.indents}</subroutineDec>\n')
@@ -372,7 +378,7 @@ class CompilationEngine:
     Compiles a subroutine's body.
     Handles '{' varDec* statements '}'.
     """
-    def compileSubroutineBody(self):
+    def compileSubroutineBody(self, type):
         """
         subroutineBody: '{' varDec* statements '}'
         """
@@ -389,6 +395,19 @@ class CompilationEngine:
         # chech symbol table for count of type "local"
         nLocalVars = self.subroutineSymbolTable.varCount("local")
         self.VMWriter.writeFunction(f'{self.classSymbolTable.scopeName}.{self.subroutineSymbolTable.scopeName}', nLocalVars)
+
+        # sets base address of this for contructor
+        if type == "constructor":
+            fieldCount = self.classSymbolTable.varCount("this")
+            self.VMWriter.writePush("constant", fieldCount)
+            self.VMWriter.writeCall("Memory.alloc", 1)
+            self.VMWriter.writePop("pointer", 0)
+
+        # gets "this" for current object
+        if type == "method":
+            self.VMWriter.writePush("argument", 0)
+            self.VMWriter.writePop("pointer", 0) 
+
 
         self.compileStatements()
         
@@ -666,6 +685,9 @@ class CompilationEngine:
         self.eat(expected=["do"])
 
         self.compileSubroutineCall()
+
+        # get rid of returned val off of the stack
+        self.VMWriter.writePop("temp", 0)
         
         self.eat(expected=[";"])
         
@@ -842,42 +864,82 @@ class CompilationEngine:
     def compileSubroutineCall(self):
         # subroutineName '(' expressionList ')' | (className | varName) '.' subroutineName '(' expressionList ')'
 
-        # eat subroutine name w/o adding to symbol table
-        # if in symbol table, need to override to type.funcName nArgs ??
+        # need to get base address of current object being called (for method)
+        # then push that to the stack as arg 0
+        # then call Obj/ClassName.method nArgs (len(expressionList) + 1 for obj)
+
+        # current token is funcName
+        # if it is a method: class/objName + "." + methodName(args...)
+        # if do method() -> take from className for className.methodName(args...)
+        # else if already have cN.mN(args...), need to get cN object
+        
+        nArgs = 0
+
         name = self.tknzr.getCurTokenValue()
-        # if name == self.classSymbolTable.scopeName:
-        #     pass
-        # else:
-        #     if name == self.subroutineSymbolTable.scopeName:
-        #         pass
-        #     elif name in self.subroutineSymbolTable.scopeTable:
-        #         name = self.subroutineSymbolTable.typeOf(name)
-
-        #  and name != self.subroutineSymbolTable.scopeName
-        if name != self.classSymbolTable.scopeName:
-            if name in self.classSymbolTable.scopeTable:
-                name = self.classSymbolTable.typeOf(name)
-            if name in self.subroutineSymbolTable.scopeTable:
-                name = self.subroutineSymbolTable.typeOf(name)
-
         self.eat(skip_st_def=True)
+        className = None
+        if self.tknzr.getCurTokenValue() == ".":
+            # name is currently the "object" name, if its not a class name
+            nArgs += 1
+            self.eat(["."])
+            
+            method = self.tknzr.getCurTokenValue()
+            if method == "new":
+                # is constructor
+                # Object.new()
+                callName = name
+            else:
+                # other method calls, object.method()
+                if name in self.subroutineSymbolTable.scopeTable:
+                    callName = self.subroutineSymbolTable.typeOf(name)
+                    # push cur item to stack as first arg
+                    self.VMWriter.writePush(self.subroutineSymbolTable.kindOf(name), self.subroutineSymbolTable.indexOf(name))
+                elif name in self.classSymbolTable.scopeTable:
+                    callName = self.classSymbolTable.typeOf(name)
+                    # push cur item to stack as first arg
+                    self.VMWriter.writePush(self.classSymbolTable.kindOf(name), self.classSymbolTable.indexOf(name))
 
-        if self.tknzr.getCurTokenValue() == '.':
-            self.eat(expected=['.'])
-            name = name + "."
-            name = name + self.tknzr.getCurTokenValue()
-            self.eat(skip_st_def=True)
+                else:
+                    # is built in ie: Output.printInt(3), so no object arg to stack ig?
+                    nArgs -= 1
+                    callName = name
+                # print(f'name from obj.method call: {name}, callName (after lookup): {callName}\n')
+
+            self.eat()
+        else:
+            # do method() --> set class name .name()
+            method = name
+            className = self.classSymbolTable.scopeName
+            callName = None
+            # need to push current object to stack as arg for method, how/where to grab this?
+            # think can grab from pointer 0
+            nArgs += 1
+            self.VMWriter.writePush("pointer", 0)
+
+
+        # print(f'{callName if callName else className}.{method}')
+
+
+        # need to push current obj to stack for methods
 
         self.eat(expected=['('])
 
-        # need to pull nArgs from here
-        nArgs = self.compileExpressionList()
+        # need to pull nArgs from here, need to add 1 if method (for current object)
+        # also need to push current obj to stack as arg 0
+        # startName to push of  startName.endName(exp...)
+
+        # need to find how to get object name from this (then lookup in symbol table and push)
+        # numExpArgs = self.compileExpressionList()
+        # print(numExpArgs)
+        nArgs += self.compileExpressionList()
 
         self.eat(expected=[')'])
 
         # for testing:
         # nArgs = 1
-        self.VMWriter.writeCall(name, nArgs)
+        self.VMWriter.writeCall(f'{callName if callName else className}.{method}', nArgs)
+
+        # if function return type is void --> need to pop off stack (pop temp 0)
 
         return
 
