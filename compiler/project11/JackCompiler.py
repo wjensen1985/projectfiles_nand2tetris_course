@@ -509,30 +509,64 @@ class CompilationEngine:
 
         # this is where you pop the expression result to:
         dest = self.tknzr.getCurTokenValue()
-        self.eat()
-        if self.tknzr.getCurTokenValue() == '[':
-            self.eat()
-            # destination idx from this (if exists)
-            self.compileExpression()
-            self.eat()
+        hasNext, nx = self.tknzr.peek()
+        next, _ = nx
         
+        isArray = False
+        if hasNext and next == '[':
+            # is array idx access
+            isArray = True
+            
+            # push arr
+            if dest in self.subroutineSymbolTable.scopeTable:
+                st_info = [self.subroutineSymbolTable.typeOf(dest), self.subroutineSymbolTable.kindOf(dest), self.subroutineSymbolTable.indexOf(dest)]  if dest in self.subroutineSymbolTable.scopeTable else None
+            elif dest in self.classSymbolTable.scopeTable:
+                st_info = [self.classSymbolTable.typeOf(dest), self.classSymbolTable.kindOf(dest), self.classSymbolTable.indexOf(dest)]  if dest in self.classSymbolTable.scopeTable else None
+            else:
+                st_info = None
+            self.VMWriter.writePush(st_info[1], st_info[2])
+            # print(f'{st_info[1]}, {st_info[2]}')
+            self.eat()
+
+            # vm code for exp1
+            self.eat(['['])
+            self.compileExpression()
+            self.eat([']'])
+
+            # add
+            self.VMWriter.writeArithmetic("+")
+        else:
+            self.eat()
+
+
         self.eat(expected=["="])
         
         # this should result in value on top of stack that will be popped to varName you are assigning
+        # array step: vm code for exp2
         self.compileExpression()
 
         # value on top of stack, to be assigned to the "dest" from varName ('[' expression ']')?
-        if dest in self.subroutineSymbolTable.scopeTable:
-            st_info = [self.subroutineSymbolTable.typeOf(dest), self.subroutineSymbolTable.kindOf(dest), self.subroutineSymbolTable.indexOf(dest)]  if dest in self.subroutineSymbolTable.scopeTable else None
-        elif dest in self.classSymbolTable.scopeTable:
-            st_info = [self.classSymbolTable.typeOf(dest), self.classSymbolTable.kindOf(dest), self.classSymbolTable.indexOf(dest)]  if dest in self.classSymbolTable.scopeTable else None
+        if not isArray:
+            if dest in self.subroutineSymbolTable.scopeTable:
+                st_info = [self.subroutineSymbolTable.typeOf(dest), self.subroutineSymbolTable.kindOf(dest), self.subroutineSymbolTable.indexOf(dest)]  if dest in self.subroutineSymbolTable.scopeTable else None
+            elif dest in self.classSymbolTable.scopeTable:
+                st_info = [self.classSymbolTable.typeOf(dest), self.classSymbolTable.kindOf(dest), self.classSymbolTable.indexOf(dest)]  if dest in self.classSymbolTable.scopeTable else None
+            else:
+                st_info = None
+            if st_info:
+                # self.VMWriter.f.write(f'{dest}\n')
+                self.VMWriter.writePop(st_info[1], st_info[2])
+            else:
+                print("let statement assignment error, no symbol table info")
         else:
-            st_info = None
-        if st_info:
-            # self.VMWriter.f.write(f'{dest}\n')
-            self.VMWriter.writePop(st_info[1], st_info[2])
-        else:
-            print("let statement assignment error, no symbol table info")
+            # special code for isArray here
+            # grab value of second expression:
+            self.VMWriter.writePop("temp", 0)
+            # push that into arr[exp1]
+            self.VMWriter.writePop("pointer", 1)
+            self.VMWriter.writePush("temp", 0)
+            self.VMWriter.writePop("that", 0)
+
         
         self.eat(expected=[";"])
 
@@ -775,17 +809,37 @@ class CompilationEngine:
 
         cur = self.tknzr.getCurTokenValue()
         hasNext, nx = self.tknzr.peek()
-        next, nextType = nx
+        next, _ = nx
         
         if cur == '(':
             self.eat(expected=['('])
             self.compileExpression()
             self.eat(expected=[')'])
         elif hasNext and next == '[':
+            # varName '[' expression ']'          
+            
+            dest = cur
+            # push arr (varName)
+            if dest in self.subroutineSymbolTable.scopeTable:
+                st_info = [self.subroutineSymbolTable.typeOf(dest), self.subroutineSymbolTable.kindOf(dest), self.subroutineSymbolTable.indexOf(dest)]  if dest in self.subroutineSymbolTable.scopeTable else None
+            elif dest in self.classSymbolTable.scopeTable:
+                st_info = [self.classSymbolTable.typeOf(dest), self.classSymbolTable.kindOf(dest), self.classSymbolTable.indexOf(dest)]  if dest in self.classSymbolTable.scopeTable else None
+            else:
+                st_info = None
+            self.VMWriter.writePush(st_info[1], st_info[2])
             self.eat()
-            self.eat('[')
+
+            self.eat(['['])
+            # compile expression
             self.compileExpression()
-            self.eat(']')
+            self.eat([']'])
+
+            # add idx to var
+            self.VMWriter.writeArithmetic("+")
+
+            # set that to arr, and grab val at cur index (top of stack)?
+            self.VMWriter.writePop("pointer", 1)
+            self.VMWriter.writePush("that", 0)
         elif cur in self.unaryOpList:
             self.eat()
             self.compileTerm()
@@ -800,6 +854,27 @@ class CompilationEngine:
             # self.eat(skip_st_def=True)
             # self.eat(expected=['.'])
             self.compileSubroutineCall()
+        elif self.tknzr.getCurTokenType() == 'stringConstant':
+            # print(f'"{cur}", len: {len(cur)}')
+            # calling String.new(length):
+            # push length to stack
+            self.VMWriter.writePush("constant", len(cur))
+            # call String.new constructor (will put address of string object on stack)
+            self.VMWriter.writeCall("String.new", 1)
+            # save address to temp???
+            self.VMWriter.writePop("temp", 1)
+
+            for c in cur:
+                # print(f's.push(ord({ord(c)}))')
+                # put temp string object on stack as first arg for append char
+                self.VMWriter.writePush("temp", 1)
+                # put char value on stack as second arg for append char
+                self.VMWriter.writePush("constant", ord(c))
+                # call append char for current char
+                self.VMWriter.writeCall("String.appendChar", 2)
+
+            # eat string constant token
+            self.eat()
         else:
             # print(f'next: {next}, cur: {self.tknzr.getCurTokenValue()}')
             currentToken = cur
@@ -813,8 +888,7 @@ class CompilationEngine:
                 # self.VMWriter.f.write(f'{cur}\n')
                 self.VMWriter.writePush(st_info[1], st_info[2])
             else:
-                # either string/value const -> can just push value directly to stack -> how?
-                # self.VMWriter.f.write(f'{cur}\n')
+                # integer constant
                 self.VMWriter.writePush('constant', cur)
 
             self.eat()
@@ -903,7 +977,8 @@ class CompilationEngine:
                     # is built in ie: Output.printInt(3), so no object arg to stack ig?
                     nArgs -= 1
                     callName = name
-                # print(f'name from obj.method call: {name}, callName (after lookup): {callName}\n')
+                    # print(f'name from obj.method call: {name}, callName (after lookup): {callName}\n')
+
 
             self.eat()
         else:
@@ -935,12 +1010,10 @@ class CompilationEngine:
 
         self.eat(expected=[')'])
 
-        # for testing:
-        # nArgs = 1
+        if callName == "Array":
+            nArgs -= 1
         self.VMWriter.writeCall(f'{callName if callName else className}.{method}', nArgs)
-
-        # if function return type is void --> need to pop off stack (pop temp 0)
-
+        
         return
 
 
@@ -1177,7 +1250,7 @@ class VMWriter():
     
 
 def main(files):
-    print("\nrunning main")
+    # print("\nrunning main")
 
     analyzer = JackAnalyzer(files)
     analyzer.drive_analyze()
@@ -1189,12 +1262,12 @@ def main(files):
 def process_path(path):
     # check if the argument is a file
     if os.path.isfile(path):
-        print(f"{path} is a file")
+        print(f"\n{path} is a file")
         return [path] if path.endswith(".jack") else []
     
     # check if the argument is a directory
     elif os.path.isdir(path):
-        print(f"{path} is a directory")
+        print(f"\n{path} is a directory")
         jack_files = []
         for entry in os.listdir(path):
             full_path = os.path.join(path, entry)
