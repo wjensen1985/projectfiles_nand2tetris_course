@@ -856,7 +856,6 @@ class CompilationEngine:
             # self.eat(expected=['.'])
             self.compileSubroutineCall()
         elif self.tknzr.getCurTokenType() == 'stringConstant':
-            # print(f'"{cur}", len: {len(cur)}')
             # calling String.new(length):
             # push length to stack
             self.VMWriter.writePush("constant", len(cur))
