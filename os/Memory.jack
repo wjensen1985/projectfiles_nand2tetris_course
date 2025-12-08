@@ -1,9 +1,17 @@
 class Memory {
 
     static array ram;
+    static array heap;
 
     function void init(){
         let ram = 0;
+
+        let heap = 2048;
+        let freeList = heap;
+        let heap[0] = 0;
+        let heap[1] = 14334;
+
+        return;
     }
 
     function int peek(int address){
@@ -18,12 +26,29 @@ class Memory {
 
 
     function Array alloc(int size){
+        // find open segment with segment size > size + 2
+        // return failure if can't alloc - or attmept defragmentation
+        // block = base addr of found space
+        // update the freeList and the fields of block to account for new location
+        // return the block
 
+        let i = freeList
+        let freeSize = freeList[1]
+        if freeSize > (size + 2){
+            // can store obj
+        } else{
+            let i = i[0];
+        }
+
+
+        return;
     }
 
 
     function void deAlloc(Array o){
-
+        // append object to the end of the freeList
+    
+        return;
     }
 
 }

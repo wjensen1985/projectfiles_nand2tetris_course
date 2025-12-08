@@ -1,62 +1,97 @@
 class String {
+    field Array str;
+    field int curLen;
 
     constructor String new(int maxLength){
+        let str = Array.new(maxLength);
+        let curLen = 0;
 
+        return this;
     }
 
 
     method void dispose(){
 
+        return;
     }
 
 
     method int length(){
 
+        return;
     }
 
 
     method char charAt(int j){
 
+        return;
     }
 
 
     method void setCharAt(int j, char c){
 
+        return;
     }
 
 
     method String appendChar(char c){
 
+        return;
     }
 
 
     method void eraseLastChar(){
 
+        return;
     }
 
 
     method int intValue(){
-
+        // val = 0;
+        // for (i=0... str_len){
+        //     d = int_val of str[i]
+        //     val = val* 10 + d
+        // }
+        
+        return val;
     }
 
 
     method void setInt(int j){
+        var int lastDigit;
 
+        let lastDigit = j % 10;
+        // c is character representing last digit, ascii of 0 + lastDigit value
+        if (j < 10) {
+            // need to return c as string
+            return;
+        } else {
+            return setInt(j/10).appendChar(c)
+        }
+
+
+        return;
     }
 
 
     function char backSpace(){
 
+        // ascii code of backspace
+        return 129;
     }
 
 
     function char doubleQuote(){
 
+        // ascii code of double quote
+        return 34;
     }
 
 
     funciton char newLine(){
 
+        // ascii code of new  line
+        return 128;
     }
 
 }

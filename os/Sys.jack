@@ -1,17 +1,43 @@
 class Sys {
 
-    function void halt(){
+    function void init() {
+        do Memory.init();
+        do Math.init();
+        do Screen.init();
+        do Output.init();
+        do Keyboard.init();
+        do Main.main();
+        do Sys.halt();
 
+        return;
+    }
+
+
+    function void halt(){
+        do while(true){
+            // do nothing
+        }
+        return;
     }
 
 
     function void error(int errorCode){
+        do Output.printString("ERR");
+        do Output.printInt(errorCode);
 
+        return;
     }
 
 
     function void wait(int duration){
+        var int delay_factor, i;
+        let delay_factor = 500;
 
+        do while (i < delay_factor){
+            let i = i + 1;
+        }
+
+        return;
     }
 
 }

@@ -1,32 +1,217 @@
 class Screen {
+    static boolean color;
+
+    function void init(){
+        let color = true;
+        return;
+    }
+
 
     function void clearScreen(){
+        var int addr;
+        
+        // set address to base address of the screen
+        let addr = 16384;
 
+        // loop through all addresses in screen and set to 0
+        // 24575 is last address for the screen
+        while(addr < 24576) {
+            do Memory.poke(addr, 0);
+            let addr = addr = 1;
+        }
+
+
+        return;
     }
 
 
     function void setColor(boolean b){
-
+        let color = b;
+        return;
     }
 
 
     function void drawPixel(int x, int y){
+        // 16384 is base address for the screen
+        var int addr, value, target_bit, modX, pwr_cnt;
 
+        let addr = (32 * y) + (x / 16);
+        let value = Memory.peek( (16384 + addr) );
+        
+        // set (x % 16)th bit of value to the current color
+        // get x % 16
+        let modX = x - ((x / 16) * 16);
+
+        // set target_bit int: every bit is zero except the targeted bit, which is set to 1
+        // set target_bit equal to: 2 ^ (x%16)
+        let pwr_cnt = 0;
+        let target_bit = 1;
+        while (pwr_cnt < modX){
+            let target_bit = target_bit * 2;
+            let pwr_cnt = pwr_cnt + 1;
+        }
+
+
+        // account for color already, ie sets target bit to 1 if color else sets target bit to 0
+        // do XOR(value, AND(color, target_bit));
+        // XOR(x, y) equivalent: AND(OR(x, y), NOT(AND(x,y)))
+        // full jack statement:
+        // ( (x | y) & (~((x & y))) )
+        // where x is the value, and y is color & target_bit
+        if (color){
+            let value = ( value | target_bit );
+        } else {
+            let value = ( value & (~(target_bit)) );
+        }
+
+
+        do Memory.poke((16384 + addr), value);
+
+        return;
     }
 
 
     function void drawLine(int x1, int y1, int x2, int y2){
 
+        var int x, y, a, b, diff, dx, dy, x, y;
+
+        let dx = x2 - x1;
+        let dy = y2 - y1;
+
+        // straight line detection:
+        // if no change in x or no change in y --> straight line
+        // no change in x --> vertical line; no change in y --> horizontal line
+        if (dx = 0){
+            // is vertical line
+            if (y1 < y2){
+                let y = y1;
+                while (y < (y2+1)){
+                    do Screen.drawPixel(x1, y);
+                    let y = y + 1;
+                }
+            } else{
+                let y = y2;
+                while (y < (y1+1)){
+                    do Screen.drawPixel(x1, y);
+                    let y = y + 1;
+                }
+            }
+
+            // early return to skip non-straight line logic
+            return;
+        }
+
+        if (dy = 0){
+            // is horizontal line
+            if (x1 < x2){
+                let x = x1;
+                while (x < (x2+1)){
+                    do Screen.drawPixel(x, y1);
+                    let x = x + 1;
+                }
+            } else{
+                let x = x2;
+                while (x < (x1+1)){
+                    do Screen.drawPixel(x, y1);
+                    let x = x + 1;
+                }
+            }
+
+            // early return to skip non-straight line logic
+            return;
+        }
+
+        
+        // need updates for screen 0, 0 being top left of screen
+        // also for accounting for all directions from x1, y1
+
+        let a = 0;
+        let b = 0;
+        let diff = 0;
+
+        while( (a < (Math.abs(dx)+1)) & (b < (Math.abs(dy)+1)) ){
+            // need to transform back to actual y & x (from x' & y')
+            
+            if (dx < 0){
+                let x = x1 - a;
+            } else{
+                let x = x1 + a;
+            }
+            if (dy < 0){
+                let y = y1 - b;
+            } else{
+                let y = y1 + b;
+            }
+
+            // let y = y1 + b;
+            // let x = x1 + a;
+            do Screen.drawPixel(x, y);
+            
+            // decide right or up
+            if (diff < 0){
+                let a = a + 1;
+                let diff = diff + Math.abs(dy);
+            } else {
+                let b = b + 1;
+                let diff = diff - Math.abs(dx);
+            }
+        }
+
+        return;
     }
 
 
     function void drawRectangle(int x1, int y1, int x2, int y2){
+        var int row, tot_rows, dy, start_y;
+        
+        let dy = y2 - y1;
+        if (dy < 0){
+            let tot_rows = y1 - y2;
+            let start_y = y2;
+        } else {
+            let tot_rows = y2 - y1;
+            let start_y = y1;
+        }
 
+        let row = 0;
+        while(row < (tot_rows + 1)){
+            do Screen.drawLine(x1, start_y + row, x2 , start_y + row);
+            let row = row + 1;
+        }
+        
+        return;
     }
 
 
     function void drawCircle(int x, int y, int r){
+        // for each row from origin in range of +/- r
+        // use trig to find border pixel, the draw line from there to 
+        // symmetrical border px on other side of the circle
 
+        var int x1, x2, y1, y2, i, dy;
+
+        // can overflow --> limit r to no greater than 181 to prevent this
+        if (r > 181){
+            // calculations will overflow since r is too large
+            return;
+        }
+
+        let i = -r;
+
+        // for -r to r
+        while (i < (r+1)){
+            // calc end pixels on circles edge and draw line in between them
+            let dy = i;
+            let x1 = x - Math.sqrt((r * r) - (dy * dy));
+            let x2 = x + Math.sqrt((r * r) - (dy * dy));
+            let y1 = y + dy;
+            let y2 = y + dy;
+        
+            do Screen.drawLine(x1, y1, x2, y2);
+            let i = i + 1;
+        }
+
+        return;
     }
 
 }

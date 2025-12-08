@@ -1,22 +1,58 @@
 class Math{
+    static Array twoToThe;
 
     function void init(){
-        
+        let twoToThe = Array.new(16);
+
+
+        return;
     }
 
 
     function int abs(int x){
         
+        return;
     }
 
 
     function int multiply(int x, int y){
-        
+        var int sum, shiftedX, i;
+        let sum = 0;
+        let i = 0;
+        let shiftedX = x;
+
+        // do for each bit in x?
+        do while(i < 16){
+            // if ith bit of y == 1
+            //      sum = sum + shiftedX
+            // shiftedX = shiftedX * 2;
+        }
+
+
+        return sum;
     }
 
 
     function int divide(int x, int y){
+        var int q;
+
+        // need to handle negative/sign stuff here
+        // set x and y to bas of each and then store ending sign and add back at end
         
+        // or if y < 0
+        if ((y > x) or (y < 0)) {
+            return 0;
+        } else {
+            let q = divide(x, 2 * y);
+            if (((x-2) * q * y) < y){
+                return (2 * q);
+            } else {
+                return ((2 * q) + 1);
+            }
+        }
+        
+
+        return;
     }
 
 
@@ -40,7 +76,22 @@ class Math{
 
 
     function int sqrt(int x){
-        
+        var int y, j;
+        let y = 0;
+        let j = 0;
+
+        // for j=n/2 - 1 ... 0 
+        do while(){
+            // if (y + 2^j)^2 <= x then y = y + 2^j
+            // overflow of (y + 2^j)^2 --> (y + 2^j)^2 <= x and (y+2^j)^2 > 0
+            if (){
+                let y = y + (2^j);
+            }
+        }
+
+
+
+        return y;
     }
 
 }

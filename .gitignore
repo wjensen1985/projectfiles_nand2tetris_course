@@ -2,6 +2,7 @@
 VMTranslator
 */project10/p10_test_files/*
 */project11/p11_test_files/*
+*/test_files/*
 *.*:ZoneIdentifier
 /*.*:ZoneIdentifier
 JackCompiler
