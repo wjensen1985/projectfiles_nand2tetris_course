@@ -17,7 +17,7 @@ class Screen {
         // 24575 is last address for the screen
         while(addr < 24576) {
             do Memory.poke(addr, 0);
-            let addr = addr = 1;
+            let addr = addr + 1;
         }
 
 
