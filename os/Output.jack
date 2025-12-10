@@ -1,7 +1,11 @@
 class Output {
     static Array charMaps;
+    static int cursorX, cursorY;
 
     function void init() {
+        let cursorX = 0;
+        let cursorY = 0;
+        do Output.initMap();
 
         return;
     }
@@ -54,7 +58,7 @@ class Output {
         do Output.create(64,30,51,51,59,59,59,27,3,30,0,0);  // @
         do Output.create(63,30,51,51,24,12,12,0,12,12,0,0);  // ?
 
-        do Output.create(65,0,0,0,0,0,0,0,0,0,0,0);          // A ** TO BE FILLED **
+        do Output.create(65,12,30,51,51,63,51,51,51,51,0,0);           // A ** TO BE FILLED **
         do Output.create(66,31,51,51,51,31,51,51,51,31,0,0); // B
         do Output.create(67,28,54,35,3,3,3,35,54,28,0,0);    // C
         do Output.create(68,15,27,51,51,51,51,51,27,15,0,0); // D
@@ -155,12 +159,78 @@ class Output {
 
 
     function void moveCursor(int i, int j){
+        
+        if ( (j < 0) | (j > 63) ) {
+            if (j < 0) {
+                let cursorX = 0;
+            } else {
+                let cursorX = 63;
+            }
+        } else {
+            let cursorX = j;
+        }
+
+        if ( (i < 0) | (i > 63) ) {
+            if (i < 0) {
+                let cursorY = 0;
+            } else {
+                let cursorY = 63;
+            }
+        } else {
+            let cursorY = i;
+        }
 
         return;
     }
 
 
+    // screen is a 23 x 64 character grid
+    // font is 8 pixel wide and 11 pixels high
     function void printChar(char c){
+        var Array map;
+        var int x, y, target_bit, bit_cnt, row_cnt, cur_int;
+        var boolean color_value;
+
+
+        // print letters bitmap at current cursors position
+        // 1. get pixel translated position of current cursor position
+        let map = Output.getMap(c);
+        // 2. print letters bitmap based at pixel position
+        let x = cursorX * 8;
+        let y = cursorY * 11;
+        
+        let row_cnt = 0;
+        while (row_cnt < 11){
+            let cur_int = map[row_cnt];
+
+            // 2 ^ 8 = 256, so for first 8 bits would be while target_bit is <= 256
+            let bit_cnt = 1;
+            let target_bit = 1;
+            while (bit_cnt < 9) {
+                if ((cur_int & target_bit) = 0) {
+                    let color_value = false;
+                }else {
+                    let color_value = true;
+                }
+
+                do Screen.setColor(color_value);
+                do Screen.drawPixel(x + bit_cnt - 1, y + row_cnt);
+
+                let target_bit = target_bit * 2;
+                let bit_cnt = bit_cnt + 1;
+            }
+
+            let row_cnt = row_cnt + 1;
+        }
+
+        // update cursor to next position
+        if (cursorX = 63) {
+            let cursorX = 0;
+            let cursorY = Math.min(cursorY + 1, 22);
+        } else {
+            let cursorX = cursorX + 1;
+        }
+
 
         return;
     }
@@ -168,23 +238,101 @@ class Output {
 
     function void printString(String s){
 
+        var int len, i;
+        var char c;
+
+        let i = 0;
+        let len = s.length();
+
+        while (i < len){
+            let c = s.charAt(i);
+            do Output.printChar(c);
+
+            let i = i + 1;
+        }
+
+        
         return;
     }
 
 
     function void printInt(int i){
 
+        // convert integer to string
+        // print at current cursor position
+        // 0-->48 ... 9-->57
+        var int curDigit, input, power;
+
+        // need to handle negative numbers
+        if (i < 0){
+            // handle negative symbol
+            do Output.printChar(45);
+
+            // set i to positive i for processing rest of integer
+            let input = Math.abs(i);
+        } else {
+            let input = i;
+        }
+
+
+        // find largest power of 10 <= n
+        let power = 1;
+        while ((input / power) > 9) {
+            let power = power * 10;
+        }
+
+        // print digits from most significant to least
+        while (power > 0) {
+            let curDigit = input / power;
+            do Output.printChar(48 + curDigit);
+
+            let input = input - (curDigit * power);
+            let power = power / 10;
+        }
+
         return;
     }
 
 
     function void println(){
+        // sets cursor to the beginning of the next line
+        let cursorY = Math.min(22, (cursorY + 1));
+        let cursorX = 0; 
 
         return;
     }
 
 
     function void backSpace(){
+        // erase char that was last written and move cursor back one position
+        var int x, y, bit_cnt, row_cnt;
+        var boolean color_value;
+
+        // move cursor back to prev. spot
+        if (cursorX = 0) {
+            let cursorX = 63;
+            let cursorY = Math.max(cursorY - 1, 0);
+        } else {
+            let cursorX = cursorX - 1;
+        }
+
+        // write over current char with blank (all white)
+        let x = cursorX * 8;
+        let y = cursorY * 11;
+        
+        let row_cnt = 0;
+        while (row_cnt < 11){
+            let bit_cnt = 1;
+            while (bit_cnt < 9) {
+                let color_value = false;
+                do Screen.setColor(color_value);
+                do Screen.drawPixel(x + bit_cnt - 1, y + row_cnt);
+
+                let bit_cnt = bit_cnt + 1;
+            }
+
+            let row_cnt = row_cnt + 1;
+        }
 
         return;
     }
