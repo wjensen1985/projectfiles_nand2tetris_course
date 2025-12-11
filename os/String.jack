@@ -3,7 +3,10 @@ class String {
     field int curLen;
 
     constructor String new(int maxLength){
-        let str = Array.new(maxLength);
+        if (maxLength > 0){
+            let str = Array.new(maxLength);            
+        }
+
         let curLen = 0;
 
         return this;
@@ -11,6 +14,7 @@ class String {
 
 
     method void dispose(){
+        do Memory.deAlloc(this);
 
         return;
     }
@@ -18,17 +22,22 @@ class String {
 
     method int length(){
 
-        return;
+        return curLen;
     }
 
 
     method char charAt(int j){
+        var char ret;
+        
+        let ret = str[j];
 
-        return;
+        return ret;
     }
 
 
     method void setCharAt(int j, char c){
+
+        let str[j] = c;
 
         return;
     }
@@ -36,11 +45,15 @@ class String {
 
     method String appendChar(char c){
 
-        return;
+        let str[curLen] = c;
+        let curLen = curLen + 1;
+
+        return this;
     }
 
 
     method void eraseLastChar(){
+        let curLen = curLen - 1;
 
         return;
     }
@@ -52,44 +65,130 @@ class String {
         //     d = int_val of str[i]
         //     val = val* 10 + d
         // }
+
+        // negative (c = 45)
+        // digit = c - 48 if c > 47 and c < 58
         
-        return val;
+        var int i, val;
+        var boolean isNegative;
+
+        let isNegative = false;
+        let val = 0;
+
+        while (i < curLen) {
+            if ((i = 0) & (str[i] = 45)) {
+                let isNegative = true;
+            } else {
+                if ( (str[i]> 47) & (str[i] < 58)){
+                    if (val = 0) {
+                        let val = str[i] - 48;
+                    } else {
+                        let val = (val * 10) + (str[i] - 48);
+                    }
+                } else {
+                    if (isNegative){
+                        return val * -1;
+                    } else {
+                        return val;
+                    }
+                }
+            }
+
+            let i = i + 1;
+        }
+
+        if (isNegative){
+            return val * -1;
+        } else {
+            return val;
+        }
+
     }
 
 
     method void setInt(int j){
-        var int lastDigit;
+        var int curDigit, input, power;
 
-        let lastDigit = j % 10;
-        // c is character representing last digit, ascii of 0 + lastDigit value
-        if (j < 10) {
-            // need to return c as string
-            return;
+        let curLen = 0;
+
+        // need to handle negative numbers
+        if (j < 0){
+            // handle negative symbol
+            do appendChar(45);
+
+            // set i to positive i for processing rest of integer
+            let input = Math.abs(j);
         } else {
-            return setInt(j/10).appendChar(c)
+            let input = j;
         }
 
 
+        // find largest power of 10 <= n
+        let power = 1;
+        while ((input / power) > 9) {
+            let power = power * 10;
+        }
+
+        // print digits from most significant to least
+        while (power > 0) {
+            let curDigit = input / power;
+            do appendChar(48 + curDigit);
+
+            let input = input - (curDigit * power);
+            let power = power / 10;
+        }
+
         return;
+       
+        // var int lastDigit;
+        // var char c;
+        // var String tmp;
+        // var boolean isNegative;
+
+        // if (j < 0){
+        //     let isNegative = true;
+        //     let j = Math.abs(j);
+        // } else {
+        //     let isNegative = false;
+        // }
+
+        // // char(j % 10)
+        // let lastDigit = (j - ((j / 10) * 10)) + 48;
+        // // c is character representing last digit, ascii of 0 + lastDigit value
+        // // let c = lastDigit + 48;
+
+        // if (j < 10) {
+        //     // need to return c as string
+        //     if (isNegative){
+        //         let tmp = String.new(2);
+        //         let tmp = tmp.appendChar(45);
+        //     } else {
+        //         let tmp = String.new(1);
+        //     }
+        //     return tmp.appendChar(lastDigit);
+
+        // } else {
+        //     let tmp = setInt(j/10);
+        //     let tmp = tmp.appendChar(lastDigit);
+        //     return tmp;
+        // }
+
     }
 
 
     function char backSpace(){
-
         // ascii code of backspace
         return 129;
     }
 
 
     function char doubleQuote(){
-
         // ascii code of double quote
         return 34;
     }
 
 
-    funciton char newLine(){
-
+    function char newLine(){
         // ascii code of new  line
         return 128;
     }
