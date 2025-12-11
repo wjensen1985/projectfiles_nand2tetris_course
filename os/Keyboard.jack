@@ -8,27 +8,122 @@ class Keyboard {
 
     function char keyPressed(){
         // keyboard address is 24576
-
         // returns currnet scan_code in keyboard address
         return Memory.peek(24576);
     }
 
 
     function char readChar(){
+        var char c;
+
+        while (Keyboard.keyPressed() = 0){
+            // do nothing
+        }
+
+        let c = Keyboard.keyPressed();
+
+        while (~(Keyboard.keyPressed()= 0)){
+            // do nothing
+        }
+
+        do Output.printChar(c);
         
-        return;
+        return c;
     }
 
 
     function String readLine(String message){
+        /*
+        repeat
+            c = readChar()
+            if c == newLine:
+                display newLine
+                return str
+            else 
+                if c == backspace
+                    remove last char from string
+                    do output.backspace();
+                else
+                    str = str.append(c)
         
-        return;
+        return str
+
+        */
+
+        var String str;
+        var char c;
+        var boolean flag;
+
+        do Output.printString(message);
+
+        let str = String.new(50);
+
+        let flag = true;
+        while(flag) {
+
+            let c = Keyboard.readChar();
+
+            // c equals Line / return
+            if (c = 128) {
+                return str;
+            } else {
+                // if c equals backspace
+                if (c = 129) {
+                    // remove last char from str
+                    do str.eraseLastChar();
+                } else {
+                    do str.appendChar(c);
+                }
+            }
+
+        }
+
+        return str;
     }
 
 
     function int readInt(String message){
-        
-        return;
+        var int ret, input;
+        var char c;
+        var String str;
+        var boolean flag, isNegative;
+
+        do Output.printString(message);
+
+        let ret = 0;
+        let flag = false;
+        let isNegative = false;
+
+        while (true){
+            let c = Keyboard.readChar();
+
+            // c equals Line / return
+            if (c = 128) {
+                do Output.println();
+                if (isNegative) {
+                    return (ret * -1);
+                } else {
+                    return ret;
+                }
+            } else {
+                // if c equals backspace
+                if (c = 129) {
+                    // remove last char from str
+                    let ret = ret / 10;
+                } else {
+                    if ((c = 45) & ~(flag)){
+                        let isNegative = true;
+                    } else {
+                        if (~(c = 45)) {
+                            let ret = (ret * 10) + (c - 48);
+                        }
+                    }
+                    
+                }
+            }
+        }
+
+        return ret;
     }
 
 }
