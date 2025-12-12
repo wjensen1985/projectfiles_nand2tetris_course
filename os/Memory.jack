@@ -32,21 +32,46 @@ class Memory {
         // block = base addr of found space
         // update the freeList and the fields of block to account for new location
         // return the block
-        var int i, freeSize;
+        var int cur, prev, next, freeSize, ret;
 
-        let i = freeList[0];
-        while ( (i < 16390) & (~(i = 0)) ) {
-            let freeSize = i[1];
-            if (freeSize > (size + 1)){
-                // can store obj
-                return i[2];
-            } else{
-                let i = ram[i];
+        let cur = freeList;
+        let prev = freeList;
+
+        while (cur < 16383) {
+            // check current block works:
+            let freeSize = ram[cur + 1];
+            let next = ram[cur];
+            if (freeSize > (size + 1)) {
+                if (freeSize = (size+2)) {
+                    // use full block; set size, next, and addr to return
+                    let ret = cur + 4;
+                    let ram[cur+3] = size;
+                    let ram[cur+2] = null;
+                    
+                    // remove block from list
+                    let ram[prev] = next;
+
+                    return ret;
+                } else {
+                    // split block
+                    let ret = (freeSize - size) + (cur + 2);
+                    let ram[ret-1] = size;
+                    let ram[ret-2] = null;
+
+                    // update split off size (left over that is not being returned)
+                    let ram[cur+1] = freeSize - (size + 2);
+                    return ret;
+                }
             }
+            
+            
+            let prev = cur;
+            let cur = next;
 
         }
 
-        return i;
+        return 2050;
+
     }
 
 
@@ -56,11 +81,12 @@ class Memory {
 
         let cur = freeList;
 
-        while (~(cur = 0)){
+        while (~(ram[cur] = 0)){
             let cur = ram[cur];
         }
 
-        let cur = obj;
+        // set next point to objects "next" pointer (which is already null)
+        let ram[cur] = obj - 2;
     
         return;
     }
