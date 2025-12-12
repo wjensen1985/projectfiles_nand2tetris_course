@@ -1,7 +1,8 @@
 class Memory {
 
-    static array ram;
-    static array heap;
+    static Array ram;
+    static Array heap;
+    static Array freeList;
 
     function void init(){
         let ram = 0;
@@ -31,22 +32,35 @@ class Memory {
         // block = base addr of found space
         // update the freeList and the fields of block to account for new location
         // return the block
+        var int i, freeSize;
 
-        let i = freeList
-        let freeSize = freeList[1]
-        if freeSize > (size + 2){
-            // can store obj
-        } else{
-            let i = i[0];
+        let i = freeList[0];
+        while ( (i < 16390) & (~(i = 0)) ) {
+            let freeSize = i[1];
+            if (freeSize > (size + 1)){
+                // can store obj
+                return i[2];
+            } else{
+                let i = ram[i];
+            }
+
         }
 
-
-        return;
+        return i;
     }
 
 
-    function void deAlloc(Array o){
+    function void deAlloc(Array obj){
         // append object to the end of the freeList
+        var int cur;
+
+        let cur = freeList;
+
+        while (~(cur = 0)){
+            let cur = ram[cur];
+        }
+
+        let cur = obj;
     
         return;
     }

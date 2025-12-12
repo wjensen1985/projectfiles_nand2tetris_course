@@ -10,22 +10,33 @@ class Math{
 
 
     function int abs(int x){
-        
-        return;
+        if (x < 0) { 
+            return -x;
+        } else {
+            return x;
+        }
     }
 
 
     function int multiply(int x, int y){
-        var int sum, shiftedX, i;
+        var int sum, shiftedX, i, target_bit;
         let sum = 0;
         let i = 0;
         let shiftedX = x;
+        let target_bit = 1;
 
         // do for each bit in x?
-        do while(i < 16){
+        while(i < 16){
             // if ith bit of y == 1
             //      sum = sum + shiftedX
-            // shiftedX = shiftedX * 2;
+            if (~((target_bit & y) = 0)) {
+                let sum = sum + shiftedX;
+            }
+
+            let shiftedX = shiftedX + shiftedX;
+
+            let i = i + 1;
+            let target_bit = target_bit + target_bit;
         }
 
 
@@ -34,25 +45,40 @@ class Math{
 
 
     function int divide(int x, int y){
-        var int q;
-
+        var int q, sign;
         // need to handle negative/sign stuff here
-        // set x and y to bas of each and then store ending sign and add back at end
+        // set x and y to abs of each and then store ending sign and add back at end
         
+        if (y = 0) {
+            return 0;
+        }
+
+        if ( ((x > -1) & (y > -1)) | ((x < 0) & (y < 0)) ) {
+            let sign = 1;
+        } else {
+            let sign = -1;
+            let x = Math.abs(x);
+            let y = Math.abs(y);
+
+            return (sign * Math.divide(x, y));
+
+        }
+
+        let x = Math.abs(x);
+        let y = Math.abs(y);
+
         // or if y < 0
-        if ((y > x) or (y < 0)) {
+        if ((y > x) | (y < 0)) {
             return 0;
         } else {
-            let q = divide(x, 2 * y);
-            if (((x-2) * q * y) < y){
+            let q = Math.divide(x, 2 * y);
+            if ( (x - (2 * q * y)) < y ){
                 return (2 * q);
             } else {
                 return ((2 * q) + 1);
             }
         }
-        
 
-        return;
     }
 
 
@@ -74,22 +100,40 @@ class Math{
         
     }
 
+    function int sqrt(int x) {
+        var int y, i, j, k, twoPowerValue, term;
 
-    function int sqrt(int x){
-        var int y, j;
         let y = 0;
-        let j = 0;
 
-        // for j=n/2 - 1 ... 0 
-        do while(){
-            // if (y + 2^j)^2 <= x then y = y + 2^j
-            // overflow of (y + 2^j)^2 --> (y + 2^j)^2 <= x and (y+2^j)^2 > 0
-            if (){
-                let y = y + (2^j);
-            }
+        // Handle negatives (OS usually defines sqrt of negative as 0)
+        if (x < 0) {
+            return 0;
         }
 
+        // We’ll set up 8 bits: j = 7, 6, ..., 0
+        let i = 0;
+        while (i < 8) {
+            // j counts down from 7 to 0
+            let j = 7 - i;
 
+            // compute twoPowerValue = 2^j
+            let twoPowerValue = 1;
+            let k = 0;
+            while (k < j) {
+                let twoPowerValue = twoPowerValue * 2;
+                let k = k + 1;
+            }
+
+            // term = (y + 2^j)^2
+            let term = (y + twoPowerValue) * (y + twoPowerValue);
+
+            // if term <= x and term > 0, accept this bit
+            if (((term < x) | (term = x)) & (term > 0)) {
+                let y = y + twoPowerValue;
+            }
+
+            let i = i + 1;
+        }
 
         return y;
     }
